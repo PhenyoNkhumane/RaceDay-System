@@ -17,14 +17,7 @@ RaceDay is an ASP.NET Core API for managing sporting events, categories, partici
 - .NET 10 SDK
 - SQL Server or SQL Server LocalDB
 
-Configure a local JWT signing key (at least 32 bytes) and database connection string. Do not commit the key:
-
-```powershell
-$env:Jwt__SigningKey = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
-$env:Identity__EncryptionKey = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
-```
-
-Keep both keys stable and secret; the identity encryption key must remain available to decrypt existing participant records. Update `ConnectionStrings:DefaultConnection` in user secrets or `appsettings.Development.json` for your SQL Server instance, then create a fresh database by running `docs/RaceDay.sql`. Existing databases from earlier versions need a data migration that encrypts their plaintext identity values before they can be used; this repository does not yet provide that upgrade migration. Start the API:
+Development uses a throwaway `Identity:EncryptionKey` in `appsettings.Development.json` (the same base64 key as the tests). Production must supply a real 32-byte key through the `Identity__EncryptionKey` environment variable — do not reuse the development value. Update `ConnectionStrings:DefaultConnection` in user secrets or `appsettings.Development.json` for your SQL Server instance, then create a fresh database by running `docs/RaceDay.sql`. Existing databases from earlier versions need a data migration that encrypts their plaintext identity values before they can be used; this repository does not yet provide that upgrade migration. Start the API:
 
 ```powershell
 dotnet run --project RaceDay.Api
