@@ -1,14 +1,15 @@
-CREATE DATABASE RaceDay;
-
+IF DB_ID('RaceDay') IS NOT NULL
+BEGIN
+    ALTER DATABASE RaceDay SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE RaceDay;
+END
 GO
-CREATE INDEX IX_Event_Organiser ON Event (organiser_id);
-CREATE INDEX IX_Category_Event ON Category (event_id);
-CREATE INDEX IX_Category_Discipline ON Category (discipline_id);
-CREATE INDEX IX_ClubMembership_Club ON ClubMembership (club_id);
-CREATE INDEX IX_ClubMembership_Discipline ON ClubMembership (discipline_id);
+CREATE DATABASE RaceDay;
 GO
 USE RaceDay;
-
+GO
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
 GO
 -- =============================================
 -- TABLE: Discipline
@@ -32,7 +33,6 @@ CREATE TABLE [User] (
   ROLE VARCHAR(20) NOT NULL,
   id_number_or_passport VARCHAR(512),
   asa_permanent_license_number VARCHAR(50),
-  must_change_password BIT NOT NULL DEFAULT 0,
   created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
   CONSTRAINT CK_User_Role CHECK (
     ROLE IN ('Organiser', 'Participant')
@@ -225,6 +225,12 @@ CREATE TABLE Result (
         UNIQUE (registration_id)
 );
 GO
+CREATE INDEX IX_Event_Organiser ON Event (organiser_id);
+CREATE INDEX IX_Category_Event ON Category (event_id);
+CREATE INDEX IX_Category_Discipline ON Category (discipline_id);
+CREATE INDEX IX_ClubMembership_Club ON ClubMembership (club_id);
+CREATE INDEX IX_ClubMembership_Discipline ON ClubMembership (discipline_id);
+GO
 -- =============================================
 -- SAMPLE DATA
 -- =============================================
@@ -284,8 +290,6 @@ GO
 -- EVENTS
 DECLARE @organiser1_id INT = (SELECT id FROM [User] WHERE email = 'organiser1@example.test');
 DECLARE @organiser2_id INT = (SELECT id FROM [User] WHERE email = 'organiser2@example.test');
-DECLARE @participant1_id INT = (SELECT id FROM [User] WHERE email = 'participant1@example.test');
-DECLARE @participant2_id INT = (SELECT id FROM [User] WHERE email = 'participant2@example.test');
 
 INSERT INTO Event
     (organiser_id, title, description, date, distance_km, event_type,
@@ -341,6 +345,9 @@ VALUES
 GO
 
 -- CLUB MEMBERSHIPS
+DECLARE @participant1_id INT = (SELECT id FROM [User] WHERE email = 'participant1@example.test');
+DECLARE @participant2_id INT = (SELECT id FROM [User] WHERE email = 'participant2@example.test');
+
 INSERT INTO ClubMembership
     (participant_id, club_id, discipline_id,
      membership_number, joined_at, status)
@@ -351,6 +358,9 @@ VALUES
 GO
 
 -- REGISTRATIONS
+DECLARE @participant1_id INT = (SELECT id FROM [User] WHERE email = 'participant1@example.test');
+DECLARE @participant2_id INT = (SELECT id FROM [User] WHERE email = 'participant2@example.test');
+
 INSERT INTO Registration
     (participant_id, category_id, registration_date,
      payment_status, amount_paid, assigned_bib_number,
