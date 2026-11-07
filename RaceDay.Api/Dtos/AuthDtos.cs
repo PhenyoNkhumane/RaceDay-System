@@ -9,6 +9,7 @@ public class RegisterDto
     public required string IdNumberOrPassport { get; set; }
     public required string Role { get; set; }
     public string? AsaPermanentLicenseNumber { get; set; }
+    public string? OrganiserCode { get; set; }
 }
 
 public class LoginDto

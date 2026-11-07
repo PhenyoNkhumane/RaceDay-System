@@ -61,6 +61,34 @@ public class EventsControllerTests
     }
 
     [Fact]
+    public void GetMyEvents_AsOrganiser_IncludesDraftEvents()
+    {
+        using var db = TestDbFactory.Create();
+        var organiser = ControllerTestHelper.AddOrganiser(db, "org@raceday.co.za", "Secret123!");
+        db.Events.Add(new Event
+        {
+            OrganiserId = organiser.Id,
+            Title = "Draft Race",
+            Date = new DateOnly(2027, 10, 10),
+            DistanceKm = 10,
+            EventType = "Run",
+            VenueName = "Zoo Lake",
+            City = "Johannesburg",
+            Province = "Gauteng",
+            Status = "Draft"
+        });
+        db.SaveChanges();
+        var controller = new EventsController(db);
+        ControllerTestHelper.AttachUser(controller, organiser.Id, Roles.Organiser);
+
+        var result = controller.GetMyEvents();
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var events = Assert.IsAssignableFrom<IEnumerable<EventResponseDto>>(ok.Value);
+        Assert.Contains(events, e => e.Status == "Draft" && e.Title == "Draft Race");
+    }
+
+    [Fact]
     public void DeleteEvent_UnknownId_ReturnsNotFound()
     {
         // Arrange

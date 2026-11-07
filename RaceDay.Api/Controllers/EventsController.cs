@@ -45,6 +45,20 @@ public class EventsController : ControllerBase
             }).ToList());
     }
 
+    [HttpGet("mine")]
+    [RequireRole(Roles.Organiser)]
+    [EndpointSummary("List the signed-in organiser's events")]
+    [EndpointDescription("Organisers only. Returns every event the signed-in Organiser owns, including Draft and Cancelled ones.")]
+    [ProducesResponseType(typeof(List<EventResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public IActionResult GetMyEvents()
+    {
+        var organiserId = CurrentUser.GetUserId(HttpContext);
+        var events = _db.Events.Where(e => e.OrganiserId == organiserId).ToList();
+        return Ok(events.Select(e => ResponseMapper.ToResponse(e)).ToList());
+    }
+
     [HttpGet("{eventId:int}")]
     [EndpointSummary("Get a published event")]
     [EndpointDescription("Returns the published event identified by eventId, including its description, date, location, distance and event type. Returns 404 if the event is missing or not published.")]

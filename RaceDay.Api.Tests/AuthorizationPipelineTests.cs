@@ -30,6 +30,7 @@ public class AuthorizationPipelineTests : IClassFixture<AuthorizationPipelineTes
 
     public static TheoryData<string, string> OrganiserOnlyRoutes => new()
     {
+        { "GET", "/api/events/mine" },
         { "POST", "/api/events" },
         { "PUT", "/api/events/1" },
         { "DELETE", "/api/events/1" },
@@ -173,6 +174,31 @@ public class AuthorizationPipelineTests : IClassFixture<AuthorizationPipelineTes
     }
 
     [Fact]
+    public async Task GetMyEvents_AsOrganiser_IncludesDraftEvents()
+    {
+        using var client = await SignedInClientAsync(Roles.Organiser);
+        var created = await client.PostAsJsonAsync("/api/events", new
+        {
+            title = "Draft Pipeline Event",
+            date = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)).ToString("yyyy-MM-dd"),
+            venueName = "Test venue",
+            city = "Test city",
+            province = "Test province",
+            distanceKm = 10,
+            eventType = "Run",
+            status = "Draft"
+        });
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+
+        var response = await client.GetAsync("/api/events/mine");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Contains(document.RootElement.EnumerateArray(),
+            e => e.GetProperty("status").GetString() == "Draft"
+                 && e.GetProperty("title").GetString() == "Draft Pipeline Event");
+    }
+
+    [Fact]
     public async Task Swagger_ListsEveryEndpointWithDescriptionsAndRequestResponseSchemas()
     {
         using var client = _factory.CreateClient();
@@ -222,15 +248,26 @@ public class AuthorizationPipelineTests : IClassFixture<AuthorizationPipelineTes
         return client;
     }
 
-    private static object RegisterBody(string email, string role) => new
-    {
-        email,
-        password = StrongPassword,
-        firstName = "Test",
-        lastName = role,
-        idNumberOrPassport = "TEST-ID-PIPELINE",
-        role
-    };
+    private static object RegisterBody(string email, string role) => role == Roles.Organiser
+        ? new
+        {
+            email,
+            password = StrongPassword,
+            firstName = "Test",
+            lastName = role,
+            idNumberOrPassport = "TEST-ID-PIPELINE",
+            role,
+            organiserCode = "ChooseYourOwnCode"
+        }
+        : new
+        {
+            email,
+            password = StrongPassword,
+            firstName = "Test",
+            lastName = role,
+            idNumberOrPassport = "TEST-ID-PIPELINE",
+            role
+        };
 
     private static HttpRequestMessage Request(string method, string url)
     {
@@ -260,7 +297,8 @@ public class AuthorizationPipelineTests : IClassFixture<AuthorizationPipelineTes
             builder.ConfigureAppConfiguration((_, configuration) =>
                 configuration.AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["Identity:EncryptionKey"] = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
+                    ["Identity:EncryptionKey"] = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+                    ["Registration:OrganiserCode"] = "ChooseYourOwnCode"
                 }));
             builder.ConfigureServices(services =>
             {

@@ -15,23 +15,32 @@ namespace RaceDay.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
+    private readonly IConfiguration _configuration;
     private readonly PasswordHasher<User> _passwordHasher = new();
 
-    public AuthController(ApplicationDbContext db)
+    public AuthController(ApplicationDbContext db, IConfiguration configuration)
     {
         _db = db;
+        _configuration = configuration;
     }
 
     [HttpPost("register")]
     [EndpointSummary("Register a user and start an authenticated session")]
-    [EndpointDescription("Creates a Participant or Organiser account. Supply email, a password of at least 12 characters with mixed case, a number and a symbol, firstName, lastName, idNumberOrPassport, and role (Participant or Organiser); asaPermanentLicenseNumber is optional. Returns 201 with the new user profile and sets the session cookie. Passwords are stored as hashes.")]
+    [EndpointDescription("Creates a Participant or Organiser account. Supply email, a password of at least 12 characters with mixed case, a number and a symbol, firstName, lastName, idNumberOrPassport, and role (Participant or Organiser); asaPermanentLicenseNumber is optional. Organiser registration also requires organiserCode. Returns 201 with the new user profile and sets the session cookie. Passwords are stored as hashes.")]
     [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Register(RegisterDto dto)
     {
         if (!Roles.Allowed.Contains(dto.Role))
         {
             return BadRequest("Invalid role.");
+        }
+
+        if (dto.Role == Roles.Organiser &&
+            dto.OrganiserCode != _configuration["Registration:OrganiserCode"])
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, "Invalid organiser code.");
         }
 
         if (!IsStrongPassword(dto.Password))

@@ -25,6 +25,7 @@ Each account has exactly one subtype: Participant or Organiser. Public self-regi
 | HTTP Method | Route | Description | Role Required | Request Body | Expected Response |
 |---|---|---|---|---|---|
 | GET | `/api/events` | List published events only | Public | — | `200 OK` — array of event response DTOs |
+| GET | `/api/events/mine` | List every event the signed-in Organiser owns, including Draft and Cancelled | Organiser | — | `200 OK` — array of event response DTOs |
 | GET | `/api/events/{eventId}` | Get a published event; drafts and cancelled events are hidden | Public | — | `200 OK` — event response DTO |
 | POST | `/api/events` | Create a new event | Organiser | `{ title, description, date, venue_name, city, province, distance_km, event_type, status }` | `201 Created` — event object; `400 Bad Request` for invalid type or distance |
 | PUT | `/api/events/{eventId}` | Update an existing event | Organiser (owner) | `{ title?, description?, date?, venue_name?, city?, province?, distance_km?, event_type?, status? }` | `200 OK` — updated event object; `404 Not Found` if absent |

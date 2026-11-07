@@ -1,5 +1,7 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using RaceDay.Api.Controllers;
 using RaceDay.Api.Dtos;
 using RaceDay.Api.Services;
@@ -8,6 +10,8 @@ namespace RaceDay.Api.Tests;
 
 public class AuthControllerTests
 {
+    private const string ValidOrganiserCode = "ChooseYourOwnCode";
+
     [Fact]
     public async Task Register_NewParticipant_ReturnsCreatedSavesUserAndStartsSession()
     {
@@ -79,7 +83,8 @@ public class AuthControllerTests
             FirstName = "Alex",
             LastName = "Example",
             IdNumberOrPassport = "TEST-ORG-ID",
-            Role = Roles.Organiser
+            Role = Roles.Organiser,
+            OrganiserCode = ValidOrganiserCode
         });
 
         // Assert
@@ -88,6 +93,28 @@ public class AuthControllerTests
         Assert.Empty(db.Participants);
         Assert.Equal(Roles.Organiser, db.Users.Single().Role);
         Assert.Equal(Roles.Organiser, CurrentUser.GetRole(controller.HttpContext));
+    }
+
+    [Fact]
+    public async Task Register_Organiser_WrongCode_ReturnsForbidden()
+    {
+        using var db = TestDbFactory.Create();
+        var controller = CreateController(db);
+
+        var result = await controller.Register(new RegisterDto
+        {
+            Email = "organiser@example.test",
+            Password = "StrongPassword123!",
+            FirstName = "Alex",
+            LastName = "Example",
+            IdNumberOrPassport = "TEST-ORG-ID",
+            Role = Roles.Organiser,
+            OrganiserCode = "WrongCode"
+        });
+
+        var forbidden = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
+        Assert.Empty(db.Users);
     }
 
     [Fact]
@@ -249,7 +276,13 @@ public class AuthControllerTests
 
     private static AuthController CreateController(RaceDay.Api.Data.ApplicationDbContext db)
     {
-        var controller = new AuthController(db);
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Registration:OrganiserCode"] = ValidOrganiserCode
+            })
+            .Build();
+        var controller = new AuthController(db, configuration);
         ControllerTestHelper.AttachUser(controller);
         return controller;
     }
