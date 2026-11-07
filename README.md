@@ -17,7 +17,22 @@ RaceDay is an ASP.NET Core API for managing sporting events, categories, partici
 - .NET 10 SDK
 - SQL Server or SQL Server LocalDB
 
-Development uses a throwaway `Identity:EncryptionKey` in `appsettings.Development.json` (the same base64 key as the tests). Production must supply a real 32-byte key through the `Identity__EncryptionKey` environment variable — do not reuse the development value. Update `ConnectionStrings:DefaultConnection` in user secrets or `appsettings.Development.json` for your SQL Server instance, then create a fresh database by running `docs/RaceDay.sql`. Existing databases from earlier versions need a data migration that encrypts their plaintext identity values before they can be used; this repository does not yet provide that upgrade migration. Start the API:
+Development uses a throwaway `Identity:EncryptionKey` in `appsettings.Development.json` (the same base64 key as the tests). Production must supply a real 32-byte key through the `Identity__EncryptionKey` environment variable — do not reuse the development value. Update `ConnectionStrings:DefaultConnection` in user secrets or `appsettings.Development.json` for your SQL Server instance.
+
+### Create the database
+
+Use either approach:
+
+- **Part 1 / demo seed:** run [`docs/RaceDay.sql`](docs/RaceDay.sql) in SSMS (or `sqlcmd`). It drops and recreates `RaceDay`, applies schema, triggers, check constraints and sample rows.
+- **Part 2 / Code-First:** apply the EF migration against an empty database:
+
+```powershell
+dotnet ef database update --project RaceDay.Api
+```
+
+Deliberate differences: the SQL script uses `varchar`, CHECK constraints and seed data; the migration uses `nvarchar`, omits CHECKs and seed data, and adds the same subtype triggers plus the filtered unique index on active registrations via the model. Prefer the script for Part 1 demos and the migration for the API.
+
+Start the API:
 
 ```powershell
 dotnet run --project RaceDay.Api

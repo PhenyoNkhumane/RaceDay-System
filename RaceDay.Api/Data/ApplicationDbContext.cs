@@ -55,7 +55,8 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.HasOne(e => e.User)
                 .WithOne(u => u.Participant)
-                .HasForeignKey<Participant>(e => e.UserId);
+                .HasForeignKey<Participant>(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Organiser>(entity =>
@@ -67,7 +68,8 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.ProvisionedAt).HasColumnName("provisioned_at");
             entity.HasOne(e => e.User)
                 .WithOne(u => u.Organiser)
-                .HasForeignKey<Organiser>(e => e.UserId);
+                .HasForeignKey<Organiser>(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Discipline>(entity =>
@@ -109,7 +111,8 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20);
             entity.HasOne(e => e.Organiser)
                 .WithMany(o => o.Events)
-                .HasForeignKey(e => e.OrganiserId);
+                .HasForeignKey(e => e.OrganiserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Category>(entity =>
@@ -130,10 +133,12 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.StartTime).HasColumnName("start_time");
             entity.HasOne(e => e.Event)
                 .WithMany(ev => ev.Categories)
-                .HasForeignKey(e => e.EventId);
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.Discipline)
                 .WithMany()
-                .HasForeignKey(e => e.DisciplineId);
+                .HasForeignKey(e => e.DisciplineId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Registration>(entity =>
@@ -157,10 +162,12 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20);
             entity.HasOne(e => e.Participant)
                 .WithMany(p => p.Registrations)
-                .HasForeignKey(e => e.ParticipantId);
+                .HasForeignKey(e => e.ParticipantId)
+                .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.Category)
                 .WithMany(c => c.Registrations)
-                .HasForeignKey(e => e.CategoryId);
+                .HasForeignKey(e => e.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Result>(entity =>
@@ -176,7 +183,8 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20);
             entity.HasOne(e => e.Registration)
                 .WithOne(r => r.Result)
-                .HasForeignKey<Result>(e => e.RegistrationId);
+                .HasForeignKey<Result>(e => e.RegistrationId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<ClubMembership>(entity =>
@@ -194,13 +202,16 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20);
             entity.HasOne(e => e.Participant)
                 .WithMany(p => p.Memberships)
-                .HasForeignKey(e => e.ParticipantId);
+                .HasForeignKey(e => e.ParticipantId)
+                .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.Club)
                 .WithMany()
-                .HasForeignKey(e => e.ClubId);
+                .HasForeignKey(e => e.ClubId)
+                .OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.Discipline)
                 .WithMany()
-                .HasForeignKey(e => e.DisciplineId);
+                .HasForeignKey(e => e.DisciplineId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
