@@ -1,6 +1,8 @@
 # RaceDay Entity Relationship Diagram
 
-`User` stores shared login and identity details. Every account has one role and one matching subtype row. Public registration may create either a Participant or an Organiser, along with its matching subtype. Events reference Organiser, and Registrations and ClubMemberships reference Participant.
+`User` stores shared login and identity details. Every account has one role (`NOT NULL`) and one matching subtype row. Public registration may create a Participant freely, or an Organiser when a valid invite code is supplied. Events reference Organiser, and Registrations and ClubMemberships reference Participant.
+
+`event_type` and `category_type` are `varchar(10)`. `id_number_or_passport` is `varchar(512)` so encrypted ciphertext fits. Discipline exists alongside `event_type` because an event’s sport kind (Run/Walk/Cycle) is separate from the reusable Discipline catalogue that categories and club memberships classify against.
 
 ```mermaid
 erDiagram
@@ -22,10 +24,9 @@ erDiagram
         string password_hash
         string first_name
         string last_name
-        string role
-        encrypted string id_number_or_passport
+        string role "varchar(20) NOT NULL"
+        encrypted string id_number_or_passport "varchar(512)"
         string asa_permanent_license_number
-        boolean must_change_password
         datetime created_at
     }
     PARTICIPANT {
@@ -51,7 +52,7 @@ erDiagram
         string description
         date date
         decimal distance_km
-        string event_type
+        string event_type "varchar(10)"
         string venue_name
         string city
         string province
@@ -62,7 +63,7 @@ erDiagram
         int event_id FK
         int discipline_id FK
         string name
-        string category_type
+        string category_type "varchar(10)"
         decimal distance_km
         int min_age
         int max_age
@@ -109,3 +110,5 @@ erDiagram
 ```
 
 The database foreign keys bind event ownership to `Organiser` and participant activity to `Participant`. Constraints and subtype checks prevent a single account from occupying both roles.
+
+![RaceDay ERD](ERD.png)
