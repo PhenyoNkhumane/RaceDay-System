@@ -53,7 +53,6 @@ public class AuthController : ControllerBase
             Role = dto.Role,
             IdNumberOrPassport = dto.IdNumberOrPassport,
             AsaPermanentLicenseNumber = dto.AsaPermanentLicenseNumber,
-            MustChangePassword = false,
             CreatedAt = DateTime.UtcNow
         };
         user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
@@ -149,7 +148,6 @@ public class AuthController : ControllerBase
         }
 
         user.PasswordHash = _passwordHasher.HashPassword(user, dto.NewPassword);
-        user.MustChangePassword = false;
         await _db.SaveChangesAsync();
         return NoContent();
     }

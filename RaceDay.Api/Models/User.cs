@@ -13,7 +13,6 @@ public class User
     public required string Role { get; set; }
     public string? IdNumberOrPassport { get; set; }
     public string? AsaPermanentLicenseNumber { get; set; }
-    public bool MustChangePassword { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public Participant? Participant { get; set; }

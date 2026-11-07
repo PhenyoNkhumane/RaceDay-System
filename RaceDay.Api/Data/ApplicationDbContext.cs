@@ -45,7 +45,6 @@ public class ApplicationDbContext : DbContext
                     value => _identityNumberProtector.Protect(value),
                     value => _identityNumberProtector.Unprotect(value));
             entity.Property(e => e.AsaPermanentLicenseNumber).HasColumnName("asa_permanent_license_number").HasMaxLength(50);
-            entity.Property(e => e.MustChangePassword).HasColumnName("must_change_password");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
         });
 
@@ -142,7 +141,7 @@ public class ApplicationDbContext : DbContext
             entity.ToTable("Registration");
             entity.HasIndex(e => new { e.ParticipantId, e.CategoryId })
                 .IsUnique()
-                .HasFilter("status = 'Active'");
+                .HasFilter("[status] = 'Active'");
             entity.HasIndex(e => e.CategoryId);
             entity.HasIndex(e => e.ParticipantId);
             entity.Property(e => e.Id).HasColumnName("id");
