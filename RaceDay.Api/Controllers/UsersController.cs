@@ -18,6 +18,10 @@ public class UsersController : ControllerBase
 
     [HttpGet("me")]
     [RequireLogin]
+    [EndpointSummary("Get the signed-in user's profile")]
+    [EndpointDescription("Returns the current user's profile, including their role and personal details; password hashes are never returned. Requires an authenticated session.")]
+    [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public IActionResult GetMe()
     {
         var userId = CurrentUser.GetUserId(HttpContext);
@@ -32,6 +36,11 @@ public class UsersController : ControllerBase
 
     [HttpPut("me")]
     [RequireLogin]
+    [EndpointSummary("Update the signed-in user's profile")]
+    [EndpointDescription("Supply any profile fields to update: firstName, lastName, email, idNumberOrPassport, or asaPermanentLicenseNumber. Omitted fields are unchanged. Returns the updated profile, or 400 if the email is already in use. Requires an authenticated session.")]
+    [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public IActionResult UpdateMe(UpdateProfileDto dto)
     {
         var userId = CurrentUser.GetUserId(HttpContext);
@@ -58,6 +67,11 @@ public class UsersController : ControllerBase
 
     [HttpGet("me/memberships")]
     [RequireRole(Roles.Participant)]
+    [EndpointSummary("List the signed-in participant's club memberships")]
+    [EndpointDescription("Returns the current Participant's club memberships with club, discipline, membership number, join date and status. Participants only; requires an authenticated session.")]
+    [ProducesResponseType(typeof(List<MembershipResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public IActionResult GetMyMemberships()
     {
         var userId = CurrentUser.GetUserId(HttpContext);

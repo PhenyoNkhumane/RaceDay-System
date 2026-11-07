@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using RaceDay.Api.Data;
 using RaceDay.Api.Dtos;
 using RaceDay.Api.Models;
@@ -21,6 +22,9 @@ public class EventsController : ControllerBase
     }
 
     [HttpGet]
+    [EndpointSummary("List published events")]
+    [EndpointDescription("Returns a JSON array of published events with each event's name, description, date, location, distance, event type and status. No request body is required.")]
+    [ProducesResponseType(typeof(List<EventResponseDto>), StatusCodes.Status200OK)]
     public IActionResult GetEvents()
     {
         return Ok(_db.Events
@@ -42,6 +46,10 @@ public class EventsController : ControllerBase
     }
 
     [HttpGet("{eventId:int}")]
+    [EndpointSummary("Get a published event")]
+    [EndpointDescription("Returns the published event identified by eventId, including its description, date, location, distance and event type. Returns 404 if the event is missing or not published.")]
+    [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetEvent(int eventId)
     {
         var ev = _db.Events.FirstOrDefault(ev => ev.Id == eventId && ev.Status == "Published");
@@ -55,6 +63,12 @@ public class EventsController : ControllerBase
 
     [HttpPost]
     [RequireRole(Roles.Organiser)]
+    [EndpointSummary("Create an event")]
+    [EndpointDescription("Organisers only. Supply title, optional description, date, venueName, city, province, distanceKm, eventType (Run, Walk or Cycle), and status (Draft, Published or Cancelled). Returns 201 with the created event and its resource URL.")]
+    [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public IActionResult CreateEvent(CreateEventDto dto)
     {
         if (dto.DistanceKm <= 0)
@@ -108,6 +122,13 @@ public class EventsController : ControllerBase
 
     [HttpPut("{eventId:int}")]
     [RequireRole(Roles.Organiser)]
+    [EndpointSummary("Update an event")]
+    [EndpointDescription("The owning Organiser may supply any event fields to change: title, description, date, venueName, city, province, distanceKm, eventType or status. Omitted fields remain unchanged. Returns the updated event, 404 if missing, or 403 if owned by another organiser.")]
+    [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult UpdateEvent(int eventId, UpdateEventDto dto)
     {
         var ev = _db.Events.Find(eventId);
@@ -156,6 +177,13 @@ public class EventsController : ControllerBase
 
     [HttpDelete("{eventId:int}")]
     [RequireRole(Roles.Organiser)]
+    [EndpointSummary("Delete an event")]
+    [EndpointDescription("The owning Organiser may delete an event that has no categories. Returns 204 on success, 404 if missing, 403 if owned by another organiser, or 409 if categories prevent deletion.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public IActionResult DeleteEvent(int eventId)
     {
         var ev = _db.Events.Find(eventId);

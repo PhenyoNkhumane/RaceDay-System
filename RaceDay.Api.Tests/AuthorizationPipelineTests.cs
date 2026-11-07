@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -169,6 +170,47 @@ public class AuthorizationPipelineTests : IClassFixture<AuthorizationPipelineTes
         });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Swagger_ListsEveryEndpointWithDescriptionsAndRequestResponseSchemas()
+    {
+        using var client = _factory.CreateClient();
+
+        var response = await client.GetAsync("/swagger/v1/swagger.json");
+        response.EnsureSuccessStatusCode();
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var paths = document.RootElement.GetProperty("paths");
+        var operationCount = 0;
+
+        foreach (var path in paths.EnumerateObject())
+        {
+            foreach (var operation in path.Value.EnumerateObject())
+            {
+                if (operation.Name is not ("get" or "post" or "put" or "delete" or "patch"))
+                {
+                    continue;
+                }
+
+                operationCount++;
+                Assert.True(operation.Value.TryGetProperty("summary", out var summary), path.Name);
+                Assert.False(string.IsNullOrWhiteSpace(summary.GetString()), path.Name);
+                Assert.True(operation.Value.TryGetProperty("description", out var description), path.Name);
+                Assert.False(string.IsNullOrWhiteSpace(description.GetString()), path.Name);
+                Assert.True(operation.Value.TryGetProperty("responses", out var responses), path.Name);
+                Assert.NotEqual(0, responses.EnumerateObject().Count());
+            }
+        }
+
+        Assert.True(operationCount >= 30);
+
+        var eventPath = paths.EnumerateObject()
+            .First(path => string.Equals(path.Name, "/api/events", StringComparison.OrdinalIgnoreCase));
+        var createEvent = eventPath.Value.GetProperty("post");
+        Assert.True(createEvent.TryGetProperty("requestBody", out var requestBody));
+        Assert.True(requestBody.GetProperty("content").TryGetProperty("application/json", out _));
+        Assert.True(createEvent.GetProperty("responses").GetProperty("201")
+            .GetProperty("content").TryGetProperty("application/json", out _));
     }
 
     private async Task<HttpClient> SignedInClientAsync(string role)

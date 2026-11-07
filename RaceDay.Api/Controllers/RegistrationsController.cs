@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 using RaceDay.Api.Data;
@@ -21,6 +22,14 @@ public class RegistrationsController : ControllerBase
 
     [HttpPost("~/api/events/{eventId:int}/registrations")]
     [RequireRole(Roles.Participant)]
+    [EndpointSummary("Enrol the signed-in participant in an event")]
+    [EndpointDescription("Participants only. Supply categoryId and optional temporary ASA licence and medical aid details. Returns 201 with the recorded participant/category enrolment; 400 for age eligibility issues, 404 for an unknown event or category, or 409 if the event is unavailable, the category is full, or the participant is already enrolled.")]
+    [ProducesResponseType(typeof(RegistrationResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Enrol(int eventId, EnrolDto dto)
     {
         var ev = _db.Events.Find(eventId);
@@ -90,6 +99,11 @@ public class RegistrationsController : ControllerBase
 
     [HttpGet("me")]
     [RequireRole(Roles.Participant)]
+    [EndpointSummary("List the signed-in participant's enrolments")]
+    [EndpointDescription("Returns the current Participant's event category enrolments and their payment and registration status. Participants only; requires an authenticated session.")]
+    [ProducesResponseType(typeof(List<RegistrationResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public IActionResult GetMine()
     {
         var userId = CurrentUser.GetUserId(HttpContext);
@@ -117,6 +131,12 @@ public class RegistrationsController : ControllerBase
 
     [HttpGet("~/api/events/{eventId:int}/registrations")]
     [RequireRole(Roles.Organiser)]
+    [EndpointSummary("List enrolments for an organiser's event")]
+    [EndpointDescription("Returns all enrolments, including selected categories and registration details, for the specified event. Only its owning Organiser may access this list; returns 404 if missing or 403 if owned by another organiser.")]
+    [ProducesResponseType(typeof(List<RegistrationResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetForEvent(int eventId)
     {
         var ev = _db.Events.Find(eventId);
@@ -141,6 +161,12 @@ public class RegistrationsController : ControllerBase
 
     [HttpGet("{registrationId:int}")]
     [RequireRole(Roles.Participant, Roles.Organiser)]
+    [EndpointSummary("Get an enrolment")]
+    [EndpointDescription("Returns an enrolment for its Participant or the Organiser who owns its event. Medical aid details are returned only to the Participant. Returns 404 if missing or 403 if the signed-in user does not own it.")]
+    [ProducesResponseType(typeof(RegistrationResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetRegistration(int registrationId)
     {
         var registration = _db.Registrations.Include(r => r.Category).FirstOrDefault(r => r.Id == registrationId);
@@ -160,6 +186,13 @@ public class RegistrationsController : ControllerBase
 
     [HttpPut("{registrationId:int}")]
     [RequireRole(Roles.Participant, Roles.Organiser)]
+    [EndpointSummary("Update an enrolment")]
+    [EndpointDescription("The owning Participant may update medical aid details; the owning event Organiser may update payment status, amount paid, bib number and registration status. Returns the updated enrolment, 404 if missing, or 403 if the user does not own it.")]
+    [ProducesResponseType(typeof(RegistrationResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult UpdateRegistration(int registrationId, UpdateRegistrationDto dto)
     {
         var registration = _db.Registrations.Include(r => r.Category).FirstOrDefault(r => r.Id == registrationId);
@@ -210,6 +243,13 @@ public class RegistrationsController : ControllerBase
 
     [HttpDelete("{registrationId:int}")]
     [RequireRole(Roles.Participant, Roles.Organiser)]
+    [EndpointSummary("Cancel an enrolment")]
+    [EndpointDescription("The owning Participant or event Organiser may cancel an enrolment that has no result. Returns 204 on success, 404 if missing, 403 if the user does not own it, or 409 if a result is already recorded.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public IActionResult CancelRegistration(int registrationId)
     {
         var registration = _db.Registrations.Include(r => r.Category).FirstOrDefault(r => r.Id == registrationId);

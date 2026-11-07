@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using RaceDay.Api.Data;
 using RaceDay.Api.Dtos;
 using RaceDay.Api.Models;
@@ -18,6 +19,9 @@ public class ClubsController : ControllerBase
     }
 
     [HttpGet]
+    [EndpointSummary("List clubs")]
+    [EndpointDescription("Returns a JSON array of available clubs with their contact and registration details. No request body is required.")]
+    [ProducesResponseType(typeof(List<ClubResponseDto>), StatusCodes.Status200OK)]
     public IActionResult GetClubs()
     {
         return Ok(_db.Clubs.Select(club => new ClubResponseDto
@@ -32,6 +36,10 @@ public class ClubsController : ControllerBase
     }
 
     [HttpGet("{clubId:int}")]
+    [EndpointSummary("Get a club")]
+    [EndpointDescription("Returns the club's name, registration and contact details. Returns 404 if the club does not exist.")]
+    [ProducesResponseType(typeof(ClubResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetClub(int clubId)
     {
         var club = _db.Clubs.Find(clubId);
@@ -45,6 +53,12 @@ public class ClubsController : ControllerBase
 
     [HttpPost]
     [RequireRole(Roles.Organiser)]
+    [EndpointSummary("Create a club")]
+    [EndpointDescription("Organisers only. Supply name and optional registrationNumber, contactEmail and contactNumber. Returns 201 with the created club, or 409 if its name or registration number is already used.")]
+    [ProducesResponseType(typeof(ClubResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public IActionResult CreateClub(CreateClubDto dto)
     {
         if (_db.Clubs.Any(c => c.Name == dto.Name ||
@@ -68,6 +82,13 @@ public class ClubsController : ControllerBase
 
     [HttpPost("{clubId:int}/memberships")]
     [RequireRole(Roles.Participant)]
+    [EndpointSummary("Join a club")]
+    [EndpointDescription("Participants only. Supply disciplineId and optional membershipNumber and joinedAt. Returns 201 with the new membership, 404 if the club or discipline is missing, or 409 if already a member of a club for that discipline.")]
+    [ProducesResponseType(typeof(MembershipResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public IActionResult JoinClub(int clubId, CreateMembershipDto dto)
     {
         if (!_db.Clubs.Any(c => c.Id == clubId) || !_db.Disciplines.Any(d => d.Id == dto.DisciplineId))

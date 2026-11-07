@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using RaceDay.Api.Data;
 using RaceDay.Api.Dtos;
 using RaceDay.Api.Models;
@@ -18,6 +19,9 @@ public class DisciplinesController : ControllerBase
     }
 
     [HttpGet]
+    [EndpointSummary("List event disciplines")]
+    [EndpointDescription("Returns available disciplines with their names and descriptions. No request body is required.")]
+    [ProducesResponseType(typeof(List<DisciplineResponseDto>), StatusCodes.Status200OK)]
     public IActionResult GetDisciplines()
     {
         return Ok(_db.Disciplines.Select(discipline => new DisciplineResponseDto
@@ -30,6 +34,12 @@ public class DisciplinesController : ControllerBase
 
     [HttpPost]
     [RequireRole(Roles.Organiser)]
+    [EndpointSummary("Create a discipline")]
+    [EndpointDescription("Organisers only. Supply a name and optional description. Returns 201 with the created discipline, or 409 if the name is already in use.")]
+    [ProducesResponseType(typeof(DisciplineResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public IActionResult CreateDiscipline(CreateDisciplineDto dto)
     {
         if (_db.Disciplines.Any(d => d.Name == dto.Name))

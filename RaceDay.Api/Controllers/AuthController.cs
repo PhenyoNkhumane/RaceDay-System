@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,10 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [EndpointSummary("Register a user and start an authenticated session")]
+    [EndpointDescription("Creates a Participant or Organiser account. Supply email, a password of at least 12 characters with mixed case, a number and a symbol, firstName, lastName, idNumberOrPassport, and role (Participant or Organiser); asaPermanentLicenseNumber is optional. Returns 201 with the new user profile and sets the session cookie. Passwords are stored as hashes.")]
+    [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register(RegisterDto dto)
     {
         if (!Roles.Allowed.Contains(dto.Role))
@@ -79,6 +84,10 @@ public class AuthController : ControllerBase
 
     [HttpPost("login")]
     [EnableRateLimiting("auth")]
+    [EndpointSummary("Log in and start an authenticated session")]
+    [EndpointDescription("Supply email and password. Returns 200 with the user's profile and sets the server-side session cookie, or 401 for invalid credentials.")]
+    [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login(LoginDto dto)
     {
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
@@ -98,6 +107,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("logout")]
+    [EndpointSummary("Log out and clear the session")]
+    [EndpointDescription("Clears the current server-side session and expires the session cookie. Returns 204 No Content.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public IActionResult Logout()
     {
         CurrentUser.SignOut(HttpContext);
@@ -106,6 +118,11 @@ public class AuthController : ControllerBase
 
     [HttpPut("password")]
     [RequireLogin]
+    [EndpointSummary("Change the signed-in user's password")]
+    [EndpointDescription("Requires the currentPassword and a strong newPassword. Returns 204 when changed, 400 for a weak password, or 401 when the current password is invalid or the session is missing.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> ChangePassword(ChangePasswordDto dto)
     {
         var userId = CurrentUser.GetUserId(HttpContext);
