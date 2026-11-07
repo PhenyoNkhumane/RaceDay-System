@@ -88,3 +88,12 @@ The screenshot below shows the GitHub Actions CI workflow used to restore, build
 
 
 GitHub Actions restores, builds, and tests the solution on .NET 10: [`dotNET.yml`](.github/workflows/dotNET.yml).
+## Unlisted YouTube Presentation
+https://youtu.be/xuefHGvTkMU?si=qpIO-F2bISGh-el0
+This presentation has covered the main planning and design components of my RaceDay project.
+
+I introduced the two user roles, explained the Entity Relationship Diagram and the database-design decisions, discussed the API Endpoint Plan, and demonstrated the SQL script using SQL Server Management Studio.
+
+I also showed the GitHub repository and its automated validation workflow.
+
+These components work together to document the system's structure, define how its data is organised, plan how the application communicates, and support the development process.
