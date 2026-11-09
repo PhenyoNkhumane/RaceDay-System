@@ -126,23 +126,33 @@ The Participant area includes upcoming event filters, event details and category
 5. In another terminal, run `dotnet run --project RaceDay.Mvc`. The MVC app opens at `http://localhost:5186`. Override `ApiSettings:BaseUrl` with `ApiSettings__BaseUrl` when the API uses another address.
 6. To start both apps from Visual Studio, open the solution's startup-project settings, select **Multiple startup projects**, and set both `RaceDay.Api` and `RaceDay.Mvc` to **Start**.
 
-### Docker
+### Docker Compose
 
-Start the API so it is reachable from Docker:
+Docker Compose starts SQL Server, the API, and the MVC app. Before starting, create a root `.env` file with a SQL Server password, a base64-encoded 32-byte encryption key, and an organiser invite code:
 
-```powershell
-dotnet run --project RaceDay.Api --urls http://0.0.0.0:5155
+```dotenv
+SQL_PASSWORD=replace-with-a-strong-sql-server-password
+IDENTITY_ENCRYPTION_KEY=replace-with-output-from-openssl-rand-base64-32
+REGISTRATION_ORGANISER_CODE=choose-a-private-organiser-code
+RACEDAY_STORAGE_CONNECTION_STRING=
 ```
 
-From the MVC folder, build and run the non-root container:
+Generate the encryption key with `openssl rand -base64 32`. Keep `.env` private and do not commit real credentials. The Blob connection string is optional; image uploads need a valid Azure Storage connection string.
+
+Start the services:
 
 ```powershell
-Set-Location RaceDay.Mvc
-docker build -t raceday-mvc .
-docker run --rm -p 8080:8080 -e ApiSettings__BaseUrl=http://host.docker.internal:5155/ raceday-mvc
+docker compose up --build -d
 ```
 
-Open `http://localhost:8080`. The API must be reachable from the container, and its database and Blob configuration must be valid. On Linux Docker hosts, add `--add-host=host.docker.internal:host-gateway` to the run command.
+Apply the API migrations to the Compose database once it is healthy. Set the password to the same value as `SQL_PASSWORD` in `.env`:
+
+```powershell
+$env:ConnectionStrings__DefaultConnection = "Server=localhost,1433;Database=RaceDay;User Id=sa;Password=<SQL_PASSWORD>;TrustServerCertificate=True;Encrypt=False"
+dotnet ef database update --project RaceDay.Api
+```
+
+Open the MVC app at `http://localhost:8080` or access the API at `http://localhost:5155`. SQL Server data persists in the `sql_data` volume; stop the services with `docker compose down`.
 
 ### Part 3 submission items
 
