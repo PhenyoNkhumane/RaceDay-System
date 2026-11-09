@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using Azure.Storage.Blobs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using RaceDay.Api.Data;
@@ -10,6 +11,18 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSingleton<IdentityNumberProtector>();
+
+var blobConnectionString = builder.Configuration["RaceDayStorage:ConnectionString"];
+if (!string.IsNullOrWhiteSpace(blobConnectionString))
+{
+    builder.Services.AddSingleton(new BlobServiceClient(blobConnectionString));
+}
+
+builder.Services.AddSingleton<IBlobService, AzureBlobService>();
+builder.Services.AddAuthentication("Session")
+    .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, SessionAuthenticationHandler>(
+        "Session", _ => { });
+builder.Services.AddAuthorization();
 
 // Server-side session: the user's ID and role live on the server (keyed by the session ID).
 // The browser only holds an opaque, HttpOnly session cookie.
@@ -65,6 +78,8 @@ app.UseExceptionHandler();
 app.UseRouting();
 app.UseRateLimiter();
 app.UseSession();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 app.Run();
 
