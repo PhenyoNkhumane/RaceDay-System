@@ -16,6 +16,13 @@ services:
       retries: 12
       start_period: 30s
 
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    command: azurite --blobHost 0.0.0.0 --blobPort 10000 --location /data
+    ports:
+      - "10000:10000"
+    volumes:
+      - azurite_data:/data
   api:
     build:
       context: .
@@ -30,6 +37,8 @@ services:
     depends_on:
       sql:
         condition: service_healthy
+      azurite:
+        condition: service_started
     ports:
       - "5155:8080"
 
@@ -48,3 +57,4 @@ services:
 
 volumes:
   sql_data:
+  azurite_data:
