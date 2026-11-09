@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/.vs/
+.git/
+.dotnet-cli-home/
+TestResults/
+**/.env
+**/.env.*
+**/*secret*
+**/secrets/
+**/appsettings.Development.json
