@@ -1,0 +1,13 @@
+@model EventFormVm
+@{ ViewData["Title"] = Model.Id == 0 ? "Create event" : "Edit event"; }
+<a asp-action="Index" class="back-link">Back to your events</a>
+<div class="page-title"><span class="eyebrow">Event details</span><h1>@ViewData["Title"]</h1></div>
+<div class="form-panel"><form asp-action="Save" method="post" enctype="multipart/form-data"><input asp-for="Id" type="hidden" /><div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <div class="row"><div class="col-md-8 mb-3"><label asp-for="Title" class="form-label">Event name</label><input asp-for="Title" class="form-control" /></div><div class="col-md-4 mb-3"><label asp-for="Date" class="form-label"></label><input asp-for="Date" type="date" class="form-control" /></div></div>
+    <div class="mb-3"><label asp-for="Description" class="form-label"></label><textarea asp-for="Description" rows="4" class="form-control"></textarea></div>
+    <div class="row"><div class="col-md-6 mb-3"><label asp-for="VenueName" class="form-label">Venue</label><input asp-for="VenueName" class="form-control" /></div><div class="col-md-3 mb-3"><label asp-for="City" class="form-label"></label><input asp-for="City" class="form-control" /></div><div class="col-md-3 mb-3"><label asp-for="Province" class="form-label"></label><input asp-for="Province" class="form-control" /></div></div>
+    <div class="row"><div class="col-md-4 mb-3"><label asp-for="DistanceKm" class="form-label">Distance (km)</label><input asp-for="DistanceKm" class="form-control" /></div><div class="col-md-4 mb-3"><label asp-for="EventType" class="form-label">Event type</label><select asp-for="EventType" class="form-select"><option>Run</option><option>Walk</option><option>Cycle</option></select></div><div class="col-md-4 mb-3"><label asp-for="Status" class="form-label"></label><select asp-for="Status" class="form-select"><option>Draft</option><option>Published</option><option>Cancelled</option></select></div></div>
+    @if (!string.IsNullOrWhiteSpace(Model.BannerUrl)) { <img class="event-banner rounded mb-3" src="@Model.BannerUrl" alt="Current event banner" /> }
+    <div class="mb-4"><label asp-for="Banner" class="form-label">Event banner</label><input asp-for="Banner" type="file" accept="image/png,image/jpeg,image/webp" class="form-control" /><small class="form-hint">PNG, JPEG or WebP, maximum 5 MB. The MVC app sends the image through the RaceDay API.</small></div>
+    <button class="btn btn-accent">Save event</button>
+</form></div>
