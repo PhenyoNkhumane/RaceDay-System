@@ -1,0 +1,6 @@
+@model List<ResultVm>
+@{ ViewData["Title"] = "My results"; }
+<div class="page-title"><span class="eyebrow">Every finish tells a story</span><h1>My results</h1><p>Your completed race history.</p></div>
+<div class="result-list">@foreach (var item in Model) { <article class="result-card"><div class="result-date"><b>@item.EventDate?.ToString("dd")</b><span>@item.EventDate?.ToString("MMM yyyy")</span></div><div class="result-main"><h2>@item.EventName</h2><p>@item.CategoryName · @item.Status</p></div><div class="result-stat"><span>Finish time</span><b>@(item.FinishTime?.ToString("HH:mm:ss") ?? "—")</b></div><div class="result-stat"><span>Overall position</span><b>@(item.OverallPosition is null ? "—" : $"{item.OverallPosition}{Ordinal(item.OverallPosition.Value)} of {item.FinisherCount ?? 0}")</b></div></article> }</div>
+@if (Model.Count == 0) { <div class="empty-state"><h2>Your first result is waiting</h2><p>Results appear here after an organiser records them.</p></div> }
+@functions { private static string Ordinal(int n) => n % 100 is >= 11 and <= 13 ? "th" : (n % 10) switch { 1 => "st", 2 => "nd", 3 => "rd", _ => "th" }; }
