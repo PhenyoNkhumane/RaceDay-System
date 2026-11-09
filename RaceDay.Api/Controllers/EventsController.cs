@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using RaceDay.Api.Data;
 using RaceDay.Api.Dtos;
 using RaceDay.Api.Models;
@@ -15,11 +16,97 @@ public class EventsController : ControllerBase
     private static readonly string[] EventStatuses = ["Draft", "Published", "Cancelled"];
 
     private readonly ApplicationDbContext _db;
+    private readonly IBlobService? _blobService;
 
-    public EventsController(ApplicationDbContext db)
+    public EventsController(ApplicationDbContext db, IBlobService? blobService = null)
     {
         _db = db;
+        _blobService = blobService;
     }
+
+    [HttpGet("dashboard")]
+    [RequireRole(Roles.Organiser)]
+    [EndpointSummary("Get the signed-in organiser's event dashboard")]
+    [EndpointDescription("Organisers only. Returns the signed-in Organiser's events with active enrolment counts and upcoming-event flags.")]
+    [ProducesResponseType(typeof(List<OrganiserEventSummaryDto>), StatusCodes.Status200OK)]
+    public IActionResult GetDashboard()
+    {
+        var organiserId = CurrentUser.GetUserId(HttpContext);
+        if (organiserId is null) return Unauthorized();
+
+        var events = _db.Events.Where(e => e.OrganiserId == organiserId).ToList();
+        var eventIds = events.Select(e => e.Id).ToList();
+        var counts = _db.Registrations.Where(r => r.Status == "Active" && eventIds.Contains(r.Category!.EventId))
+            .GroupBy(r => r.Category!.EventId).Select(g => new { EventId = g.Key, Count = g.Count() })
+            .ToDictionary(x => x.EventId, x => x.Count);
+        var summaries = events.Select(ev => new OrganiserEventSummaryDto
+            {
+                Event = ResponseMapper.ToResponse(ev),
+                EnrolmentCount = counts.GetValueOrDefault(ev.Id),
+                Upcoming = ev.Date >= DateOnly.FromDateTime(DateTime.UtcNow) && ev.Status == "Published"
+            }).OrderBy(s => s.Event.Date).ToList();
+        return Ok(summaries);
+    }
+
+    [HttpPost("{eventId:int}/banner")]
+    [Authorize(Roles = Roles.Organiser)]
+    [RequestSizeLimit(5_242_880)]
+    [EndpointSummary("Upload an event banner")]
+    [EndpointDescription("The owning Organiser may upload a PNG, JPEG or WebP banner no larger than 5 MB. The stored image URL is returned with the event.")]
+    [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> UploadBanner(int eventId, IFormFile file, CancellationToken cancellationToken)
+    {
+        var ev = _db.Events.Find(eventId);
+        if (ev is null) return NotFound();
+        if (ev.OrganiserId != CurrentUser.GetUserId(HttpContext)) return Forbid();
+        if (!IsAllowedImage(file)) return BadRequest("Choose a PNG, JPEG, or WebP image smaller than 5 MB.");
+        if (_blobService is null || !_blobService.IsConfigured) return StatusCode(StatusCodes.Status503ServiceUnavailable, "Image storage is not configured.");
+
+        await using var stream = file.OpenReadStream();
+        ev.BannerUrl = await _blobService.UploadImageAsync(stream, file.ContentType, file.FileName, cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
+        return Ok(ResponseMapper.ToResponse(ev));
+    }
+
+    [HttpGet("{eventId:int}/banner")]
+    [Authorize(Roles = Roles.Organiser)]
+    [EndpointSummary("Retrieve an event banner")]
+    [EndpointDescription("The owning Organiser may retrieve the stored banner image. Returns 404 if the event or banner is missing.")]
+    [Produces("image/jpeg", "image/png", "image/webp")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> GetBanner(int eventId, CancellationToken cancellationToken)
+    {
+        var ev = _db.Events.Find(eventId);
+        if (ev is null || string.IsNullOrWhiteSpace(ev.BannerUrl))
+        {
+            return NotFound();
+        }
+
+        if (ev.OrganiserId != CurrentUser.GetUserId(HttpContext))
+        {
+            return Forbid();
+        }
+
+        if (_blobService is null || !_blobService.IsConfigured)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, "Image storage is not configured.");
+        }
+
+        var image = await _blobService.DownloadImageAsync(ev.BannerUrl, cancellationToken);
+        return image is null ? NotFound() : File(image.Content, image.ContentType);
+    }
+
+    private static bool IsAllowedImage(IFormFile? file) => file is { Length: > 0 and <= 5_242_880 } &&
+        file.ContentType is "image/jpeg" or "image/png" or "image/webp";
 
     [HttpGet]
     [EndpointSummary("List published events")]
@@ -41,7 +128,8 @@ public class EventsController : ControllerBase
                 VenueName = ev.VenueName,
                 City = ev.City,
                 Province = ev.Province,
-                Status = ev.Status
+                Status = ev.Status,
+                BannerUrl = ev.BannerUrl
             }).ToList());
     }
 

@@ -38,6 +38,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.FirstName).HasColumnName("first_name").HasMaxLength(100);
             entity.Property(e => e.LastName).HasColumnName("last_name").HasMaxLength(100);
             entity.Property(e => e.Role).HasColumnName("role").HasMaxLength(20);
+            entity.Property(e => e.ProfilePictureUrl).HasColumnName("profile_picture_url").HasMaxLength(2048);
             entity.Property(e => e.IdNumberOrPassport)
                 .HasColumnName("id_number_or_passport")
                 .HasMaxLength(512)
@@ -109,6 +110,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.City).HasColumnName("city").HasMaxLength(100);
             entity.Property(e => e.Province).HasColumnName("province").HasMaxLength(100);
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20);
+            entity.Property(e => e.BannerUrl).HasColumnName("banner_url").HasMaxLength(2048);
             entity.HasOne(e => e.Organiser)
                 .WithMany(o => o.Events)
                 .HasForeignKey(e => e.OrganiserId)

@@ -171,20 +171,45 @@ public class ResultsController : ControllerBase
         var results = _db.Results
             .Include(r => r.Registration)
             .ThenInclude(r => r!.Category)
+            .ThenInclude(c => c!.Event)
             .Where(r => r.Registration!.Category!.EventId == eventId &&
                 r.Registration.Status == "Active")
-            .Select(r => new ResultResponseDto
-            {
-                Id = r.Id,
-                CategoryId = r.Registration!.CategoryId,
-                GunTime = r.GunTime,
-                NetTime = r.NetTime,
-                OverallPosition = r.OverallPosition,
-                CategoryPosition = r.CategoryPosition,
-                Status = r.Status
-            })
-            .ToList();
+            .AsEnumerable().Select(ResponseMapper.ToResponse).ToList();
+        var finisherCount = results.Count(r => r.Status == "Finished");
+        results = results.Select(r => new ResultResponseDto
+        {
+            Id = r.Id, CategoryId = r.CategoryId, GunTime = r.GunTime, NetTime = r.NetTime,
+            OverallPosition = r.OverallPosition, CategoryPosition = r.CategoryPosition, Status = r.Status,
+            EventName = r.EventName, EventDate = r.EventDate, CategoryName = r.CategoryName,
+            FinishTime = r.FinishTime, FinisherCount = finisherCount
+        }).ToList();
         return Ok(results);
+    }
+
+    [HttpGet("~/api/events/{eventId:int}/results/manage")]
+    [RequireRole(Roles.Organiser)]
+    [EndpointSummary("List results for the owning organiser")]
+    [EndpointDescription("Organisers only. Returns the results and associated registration IDs for the specified event when it belongs to the signed-in Organiser.")]
+    [ProducesResponseType(typeof(List<ResultResponseDto>), StatusCodes.Status200OK)]
+    public IActionResult GetForOrganiser(int eventId)
+    {
+        var ev = _db.Events.Find(eventId);
+        if (ev is null) return NotFound();
+        if (ev.OrganiserId != CurrentUser.GetUserId(HttpContext)) return Forbid();
+
+        var results = _db.Results.Include(r => r.Registration).ThenInclude(r => r!.Category)
+            .ThenInclude(c => c!.Event)
+            .Where(r => r.Registration!.Category!.EventId == eventId)
+            .AsEnumerable().Select(ResponseMapper.ToResponse).ToList();
+        var finishers = results.Count(r => r.Status == "Finished");
+        return Ok(results.Select(r => new ResultResponseDto
+        {
+            Id = r.Id, RegistrationId = r.RegistrationId, CategoryId = r.CategoryId,
+            GunTime = r.GunTime, NetTime = r.NetTime, OverallPosition = r.OverallPosition,
+            CategoryPosition = r.CategoryPosition, Status = r.Status, EventName = r.EventName,
+            EventDate = r.EventDate, CategoryName = r.CategoryName, FinishTime = r.FinishTime,
+            FinisherCount = finishers
+        }).ToList());
     }
 
     [HttpGet("me")]
@@ -205,10 +230,20 @@ public class ResultsController : ControllerBase
         var results = _db.Results
             .Include(r => r.Registration)
             .ThenInclude(r => r!.Category)
+            .ThenInclude(c => c!.Event)
             .Where(r => r.Registration!.ParticipantId == userId)
-            .AsEnumerable()
-            .Select(ResponseMapper.ToResponse)
-            .ToList();
+            .AsEnumerable().Select(ResponseMapper.ToResponse).ToList();
+        var finishersByEvent = _db.Results.Where(r => r.Status == "Finished")
+            .Select(r => r.Registration!.Category!.EventId).AsEnumerable()
+            .GroupBy(id => id).ToDictionary(g => g.Key, g => g.Count());
+        results = results.Select(r => new ResultResponseDto
+        {
+            Id = r.Id, RegistrationId = r.RegistrationId, CategoryId = r.CategoryId, GunTime = r.GunTime, NetTime = r.NetTime,
+            OverallPosition = r.OverallPosition, CategoryPosition = r.CategoryPosition, Status = r.Status,
+            EventName = r.EventName, EventDate = r.EventDate, CategoryName = r.CategoryName,
+            FinishTime = r.FinishTime,
+            FinisherCount = r.RegistrationEventId is int id && finishersByEvent.TryGetValue(id, out var count) ? count : null
+        }).ToList();
         return Ok(results);
     }
 
@@ -225,6 +260,7 @@ public class ResultsController : ControllerBase
         var result = _db.Results
             .Include(r => r.Registration)
             .ThenInclude(r => r!.Category)
+            .ThenInclude(c => c!.Event)
             .FirstOrDefault(r => r.Id == resultId);
         if (result is null)
         {

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using RaceDay.Api.Data;
 using RaceDay.Api.Dtos;
 using RaceDay.Api.Services;
+using Microsoft.AspNetCore.Http;
 
 namespace RaceDay.Api.Controllers;
 
@@ -10,10 +11,34 @@ namespace RaceDay.Api.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
+    private readonly IBlobService? _blobService;
 
-    public UsersController(ApplicationDbContext db)
+    public UsersController(ApplicationDbContext db, IBlobService? blobService = null)
     {
         _db = db;
+        _blobService = blobService;
+    }
+
+    [HttpPost("me/profile-picture")]
+    [RequireLogin]
+    [RequestSizeLimit(5_242_880)]
+    [EndpointSummary("Upload a profile picture")]
+    [EndpointDescription("The signed-in user may upload a PNG, JPEG or WebP profile picture no larger than 5 MB. The stored image URL is returned with the profile.")]
+    [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UploadProfilePicture(IFormFile file, CancellationToken cancellationToken)
+    {
+        var userId = CurrentUser.GetUserId(HttpContext);
+        var user = userId is null ? null : await _db.Users.FindAsync([userId.Value], cancellationToken);
+        if (user is null) return Unauthorized();
+        if (file is not { Length: > 0 and <= 5_242_880 } || file.ContentType is not ("image/jpeg" or "image/png" or "image/webp"))
+            return BadRequest("Choose a PNG, JPEG, or WebP image smaller than 5 MB.");
+        if (_blobService is null || !_blobService.IsConfigured)
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, "Image storage is not configured.");
+
+        await using var stream = file.OpenReadStream();
+        user.ProfilePictureUrl = await _blobService.UploadImageAsync(stream, file.ContentType, file.FileName, cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
+        return Ok(UserMapper.ToResponse(user));
     }
 
     [HttpGet("me")]

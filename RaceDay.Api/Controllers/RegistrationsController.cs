@@ -112,21 +112,10 @@ public class RegistrationsController : ControllerBase
             return Unauthorized();
         }
 
-        return Ok(_db.Registrations.Where(r => r.ParticipantId == userId)
-            .Select(r => new RegistrationResponseDto
-            {
-                Id = r.Id,
-                CategoryId = r.CategoryId,
-                ParticipantId = r.ParticipantId,
-                RegistrationDate = r.RegistrationDate,
-                PaymentStatus = r.PaymentStatus,
-                AmountPaid = r.AmountPaid,
-                AssignedBibNumber = r.AssignedBibNumber,
-                RequiresTempAsaLicense = r.RequiresTempAsaLicense,
-                MedicalAidName = r.MedicalAidName,
-                MedicalAidNumber = r.MedicalAidNumber,
-                Status = r.Status
-            }).ToList());
+        return Ok(_db.Registrations.Include(r => r.Category).ThenInclude(c => c!.Event)
+            .Include(r => r.Participant).ThenInclude(p => p!.User)
+            .Where(r => r.ParticipantId == userId).AsEnumerable().Select(r =>
+                ResponseMapper.ToResponse(r, includeMedicalAid: true)).ToList());
     }
 
     [HttpGet("~/api/events/{eventId:int}/registrations")]
@@ -151,7 +140,8 @@ public class RegistrationsController : ControllerBase
         }
 
         var registrations = _db.Registrations
-            .Include(r => r.Category)
+            .Include(r => r.Category).ThenInclude(c => c!.Event)
+            .Include(r => r.Participant).ThenInclude(p => p!.User)
             .Where(r => r.Category!.EventId == eventId)
             .AsEnumerable()
             .Select(r => ResponseMapper.ToResponse(r))
@@ -169,7 +159,8 @@ public class RegistrationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetRegistration(int registrationId)
     {
-        var registration = _db.Registrations.Include(r => r.Category).FirstOrDefault(r => r.Id == registrationId);
+        var registration = _db.Registrations.Include(r => r.Category).ThenInclude(c => c!.Event)
+            .Include(r => r.Participant).ThenInclude(p => p!.User).FirstOrDefault(r => r.Id == registrationId);
         if (registration is null)
         {
             return NotFound();
