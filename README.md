@@ -78,6 +78,7 @@ Further design docs:
 - [`docs/RaceDay.sql`](docs/RaceDay.sql)
 - [`docs/API-Endpoint-Plan.md`](docs/API-Endpoint-Plan.md)
 - [`docs/Role-Based-Design.md`](docs/Role-Based-Design.md)
+- [`docs/Part3-API-Addendum.md`](docs/Part3-API-Addendum.md)
 
 ## Tests
 
@@ -109,3 +110,44 @@ The video below demonstrates the RaceDay application, including its key function
 **Watch the Part 2 Presentation:**
 
 [RaceDay Presentation – Part 2](https://youtu.be/kTC97r9PPcI?si=13vxoU9B8v5M3D8v)
+
+## Part 3 MVC application
+
+The MVC frontend lives in `RaceDay.Mvc` and uses the Part 2 API for account, event, category, enrolment, result, and profile operations. It does not access the database. The app forwards the API's opaque `.RaceDay.Session` cookie from server-side MVC session storage on each API request.
+
+The Participant area includes upcoming event filters, event details and category entry, personal enrolments, race results, and profile editing. The Organiser area includes an event dashboard, event and category management, enrolment lists, and results capture. Active registrations appear as Confirmed in the UI; the API's separate PaymentStatus remains visible on enrolment pages.
+
+### Run locally
+
+1. Set up SQL Server and apply the API migrations as described above.
+2. Configure the API database connection and organiser invite code. Local Development uses Azurite; for real Azure uploads, provide `RaceDayStorage:ConnectionString` through user-secrets or the `RaceDayStorage__ConnectionString` environment variable. The API creates the `raceday-images` container for images.
+3. Start Azurite for local blob-storage practice. Development uses `UseDevelopmentStorage=true`; the API creates the `raceday-images` container when an image is uploaded. Azurite evidence is not proof of an Azure Storage Account. Before submission, create a real Azure Storage Account and replace only `RaceDayStorage:ConnectionString` (or `RaceDayStorage__ConnectionString`) with its connection string. Verify the uploaded blob in the Azure portal and its URL in the database.
+4. Run the API at `http://localhost:5155`.
+5. In another terminal, run `dotnet run --project RaceDay.Mvc`. The MVC app opens at `http://localhost:5186`. Override `ApiSettings:BaseUrl` with `ApiSettings__BaseUrl` when the API uses another address.
+6. To start both apps from Visual Studio, open the solution's startup-project settings, select **Multiple startup projects**, and set both `RaceDay.Api` and `RaceDay.Mvc` to **Start**.
+
+### Docker
+
+Start the API so it is reachable from Docker:
+
+```powershell
+dotnet run --project RaceDay.Api --urls http://0.0.0.0:5155
+```
+
+From the MVC folder, build and run the non-root container:
+
+```powershell
+Set-Location RaceDay.Mvc
+docker build -t raceday-mvc .
+docker run --rm -p 8080:8080 -e ApiSettings__BaseUrl=http://host.docker.internal:5155/ raceday-mvc
+```
+
+Open `http://localhost:8080`. The API must be reachable from the container, and its database and Blob configuration must be valid. On Linux Docker hosts, add `--add-host=host.docker.internal:host-gateway` to the run command.
+
+### Part 3 submission items
+
+The Part 3 CI job builds the solution, runs the existing API test suite, and builds the MVC Docker image. Add the Part 3 green workflow screenshot and your unlisted Part 3 video link here before submission. The video must use your own voice and explain the MVC structure, API-backed features, Blob Storage flow, and Docker run.
+
+Part 3 adds nullable `Event.banner_url` and `User.profile_picture_url` columns through the `Part3ImageUploads` migration. This is a documented extension to the Part 1 ERD and SQL script. Apply it with `dotnet ef database update --project RaceDay.Api` before running the updated API.
+
+AI-use disclosure: AI assistance was used to review the Part 3 requirements and scaffold and to assist with implementation. Review, understand, and adapt the code before submission in line with the PoE's academic integrity instructions.

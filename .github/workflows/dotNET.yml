@@ -29,6 +29,9 @@ jobs:
       - name: Build
         run: dotnet build RaceDay.slnx --no-restore --configuration Release
 
+      - name: Build MVC container
+        run: docker build -t raceday-mvc:ci RaceDay.Mvc
+
       - name: Test
         run: dotnet test RaceDay.slnx --no-build --configuration Release --collect:"XPlat Code Coverage" --results-directory TestResults --verbosity normal
 
