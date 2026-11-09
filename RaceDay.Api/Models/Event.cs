@@ -13,6 +13,7 @@ public class Event
     public required string City { get; set; }
     public required string Province { get; set; }
     public required string Status { get; set; }
+    public string? BannerUrl { get; set; }
 
     public Organiser? Organiser { get; set; }
     public ICollection<Category> Categories { get; set; } = new List<Category>();

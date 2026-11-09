@@ -14,6 +14,7 @@ public static class UserMapper
         Role = user.Role,
         IdNumberOrPassport = user.IdNumberOrPassport,
         AsaPermanentLicenseNumber = user.AsaPermanentLicenseNumber,
-        CreatedAt = user.CreatedAt
+        CreatedAt = user.CreatedAt,
+        ProfilePictureUrl = user.ProfilePictureUrl
     };
 }

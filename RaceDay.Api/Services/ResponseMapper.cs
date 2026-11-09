@@ -17,7 +17,8 @@ public static class ResponseMapper
         VenueName = ev.VenueName,
         City = ev.City,
         Province = ev.Province,
-        Status = ev.Status
+        Status = ev.Status,
+        BannerUrl = ev.BannerUrl
     };
 
     public static CategoryResponseDto ToResponse(Category category) => new()
@@ -47,18 +48,28 @@ public static class ResponseMapper
         RequiresTempAsaLicense = registration.RequiresTempAsaLicense,
         MedicalAidName = includeMedicalAid ? registration.MedicalAidName : null,
         MedicalAidNumber = includeMedicalAid ? registration.MedicalAidNumber : null,
-        Status = registration.Status
+        Status = registration.Status,
+        CategoryName = registration.Category?.Name,
+        EventName = registration.Category?.Event?.Title,
+        EventDate = registration.Category?.Event?.Date,
+        ParticipantName = registration.Participant?.User is { } user ? $"{user.FirstName} {user.LastName}" : null
     };
 
     public static ResultResponseDto ToResponse(Result result) => new()
     {
         Id = result.Id,
+        RegistrationId = result.RegistrationId,
         CategoryId = result.Registration?.CategoryId ?? 0,
         GunTime = result.GunTime,
         NetTime = result.NetTime,
         OverallPosition = result.OverallPosition,
         CategoryPosition = result.CategoryPosition,
-        Status = result.Status
+        Status = result.Status,
+        CategoryName = result.Registration?.Category?.Name,
+        EventName = result.Registration?.Category?.Event?.Title,
+        EventDate = result.Registration?.Category?.Event?.Date,
+        RegistrationEventId = result.Registration?.Category?.EventId,
+        FinishTime = result.NetTime ?? result.GunTime
     };
 
     public static ClubResponseDto ToResponse(Club club) => new()

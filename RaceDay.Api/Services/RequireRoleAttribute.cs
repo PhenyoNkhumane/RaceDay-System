@@ -1,34 +1,14 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Authorization;
 
 namespace RaceDay.Api.Services;
 
-/// <summary>
-/// Runs before the action. No session => 401 Unauthorized.
-/// Logged in but role not in the allowed list => 403 Forbidden.
-/// With no roles supplied it only requires a logged-in user.
-/// </summary>
-public class RequireRoleAttribute : Attribute, IAuthorizationFilter
+public class RequireRoleAttribute : AuthorizeAttribute
 {
-    private readonly string[] _roles;
-
     public RequireRoleAttribute(params string[] roles)
     {
-        _roles = roles;
-    }
-
-    public void OnAuthorization(AuthorizationFilterContext context)
-    {
-        var http = context.HttpContext;
-        if (CurrentUser.GetUserId(http) is null)
+        if (roles.Length > 0)
         {
-            context.Result = new UnauthorizedResult();
-            return;
-        }
-
-        if (_roles.Length > 0 && !_roles.Contains(CurrentUser.GetRole(http)))
-        {
-            context.Result = new StatusCodeResult(StatusCodes.Status403Forbidden);
+            Roles = string.Join(",", roles);
         }
     }
 }
