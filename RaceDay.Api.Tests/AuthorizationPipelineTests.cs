@@ -34,6 +34,8 @@ public class AuthorizationPipelineTests : IClassFixture<AuthorizationPipelineTes
         { "POST", "/api/events" },
         { "PUT", "/api/events/1" },
         { "DELETE", "/api/events/1" },
+        { "POST", "/api/events/1/banner" },
+        { "GET", "/api/events/1/banner" },
         { "POST", "/api/events/1/categories" },
         { "PUT", "/api/categories/1" },
         { "DELETE", "/api/categories/1" },
@@ -224,7 +226,7 @@ public class AuthorizationPipelineTests : IClassFixture<AuthorizationPipelineTes
                 Assert.True(operation.Value.TryGetProperty("description", out var description), path.Name);
                 Assert.False(string.IsNullOrWhiteSpace(description.GetString()), path.Name);
                 Assert.True(operation.Value.TryGetProperty("responses", out var responses), path.Name);
-                Assert.NotEqual(0, responses.EnumerateObject().Count());
+                Assert.NotEmpty(responses.EnumerateObject());
             }
         }
 
@@ -237,6 +239,32 @@ public class AuthorizationPipelineTests : IClassFixture<AuthorizationPipelineTes
         Assert.True(requestBody.GetProperty("content").TryGetProperty("application/json", out _));
         Assert.True(createEvent.GetProperty("responses").GetProperty("201")
             .GetProperty("content").TryGetProperty("application/json", out _));
+
+        AssertOperations(paths, "/api/events", "get", "post");
+        AssertOperations(paths, "/api/events/{eventId}", "get", "put", "delete");
+        AssertOperations(paths, "/api/events/{eventId}/categories", "get", "post");
+        AssertOperations(paths, "/api/categories/{categoryId}", "get", "put", "delete");
+        AssertOperations(paths, "/api/events/{eventId}/registrations", "get", "post");
+        AssertOperations(paths, "/api/registrations/me", "get");
+
+        var bannerPath = paths.EnumerateObject()
+            .First(path => string.Equals(path.Name, "/api/events/{eventId}/banner", StringComparison.OrdinalIgnoreCase));
+        Assert.True(bannerPath.Value.TryGetProperty("get", out _));
+        var uploadBanner = bannerPath.Value.GetProperty("post");
+        Assert.True(uploadBanner.GetProperty("requestBody").GetProperty("content")
+            .TryGetProperty("multipart/form-data", out _));
+    }
+
+    private static void AssertOperations(JsonElement paths, string expectedPath, params string[] methods)
+    {
+        Assert.Contains(paths.EnumerateObject(),
+            candidate => string.Equals(candidate.Name, expectedPath, StringComparison.OrdinalIgnoreCase));
+        var path = paths.EnumerateObject()
+            .First(candidate => string.Equals(candidate.Name, expectedPath, StringComparison.OrdinalIgnoreCase));
+        foreach (var method in methods)
+        {
+            Assert.True(path.Value.TryGetProperty(method, out _), $"{expectedPath} is missing {method.ToUpperInvariant()}.");
+        }
     }
 
     private async Task<HttpClient> SignedInClientAsync(string role)
@@ -274,7 +302,16 @@ public class AuthorizationPipelineTests : IClassFixture<AuthorizationPipelineTes
         var request = new HttpRequestMessage(new HttpMethod(method), url);
         if (method is "POST" or "PUT")
         {
-            request.Content = JsonContent.Create(new { });
+            if (method == "POST" && url.EndsWith("/banner", StringComparison.OrdinalIgnoreCase))
+            {
+                var form = new MultipartFormDataContent();
+                form.Add(new ByteArrayContent([]), "file", "banner.png");
+                request.Content = form;
+            }
+            else
+            {
+                request.Content = JsonContent.Create(new { });
+            }
         }
 
         return request;

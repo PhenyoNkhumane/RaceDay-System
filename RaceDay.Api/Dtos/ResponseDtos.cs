@@ -1,4 +1,13 @@
+using System.Text.Json.Serialization;
+
 namespace RaceDay.Api.Dtos;
+
+public sealed class OrganiserEventSummaryDto
+{
+    public required EventResponseDto Event { get; init; }
+    public int EnrolmentCount { get; init; }
+    public bool Upcoming { get; init; }
+}
 
 public sealed class EventResponseDto
 {
@@ -13,6 +22,7 @@ public sealed class EventResponseDto
     public required string City { get; init; }
     public required string Province { get; init; }
     public required string Status { get; init; }
+    public string? BannerUrl { get; init; }
 }
 
 public sealed class CategoryResponseDto
@@ -43,17 +53,30 @@ public sealed class RegistrationResponseDto
     public string? MedicalAidName { get; init; }
     public string? MedicalAidNumber { get; init; }
     public required string Status { get; init; }
+    public string? CategoryName { get; init; }
+    public string? EventName { get; init; }
+    public DateOnly? EventDate { get; init; }
+    public string? ParticipantName { get; init; }
 }
 
 public sealed class ResultResponseDto
 {
     public int Id { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? RegistrationId { get; init; }
     public int CategoryId { get; init; }
     public TimeOnly? GunTime { get; init; }
     public TimeOnly? NetTime { get; init; }
     public int? OverallPosition { get; init; }
     public int? CategoryPosition { get; init; }
     public required string Status { get; init; }
+    public string? EventName { get; init; }
+    [JsonIgnore]
+    public int? RegistrationEventId { get; init; }
+    public DateOnly? EventDate { get; init; }
+    public string? CategoryName { get; init; }
+    public int? FinisherCount { get; init; }
+    public TimeOnly? FinishTime { get; init; }
 }
 
 public sealed class ClubResponseDto
