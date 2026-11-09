@@ -95,9 +95,17 @@ The screenshot below shows the GitHub Actions CI workflow used to restore, build
 
 GitHub Actions restores, builds, and tests the solution on .NET 10: [`dotNET.yml`](.github/workflows/dotNET.yml).
 
-## Video
-Part 1
+## Part 1 Video
+
 
 Unlisted YouTube presentation: https://youtu.be/xuefHGvTkMU?si=qpIO-F2bISGh-el0
 
 This presentation covers the main planning and design components of the RaceDay project: the two user roles, the ERD and database decisions, the API endpoint plan, and a demonstration of the SQL script in SSMS, plus the GitHub repository and its automated validation workflow.
+
+## Part 2 Demonstration Video
+
+The video below demonstrates the RaceDay application, including its key functionalities, API endpoints, authentication, participant registration and unit testing.
+
+**Watch the Part 2 Presentation:**
+
+[RaceDay Presentation – Part 2](https://youtu.be/kTC97r9PPcI?si=13vxoU9B8v5M3D8v)
