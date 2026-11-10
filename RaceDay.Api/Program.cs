@@ -1,3 +1,4 @@
+
 using System.Threading.RateLimiting;
 using Azure.Storage.Blobs;
 using Microsoft.EntityFrameworkCore;
@@ -7,37 +8,58 @@ using RaceDay.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Controllers
 builder.Services.AddControllers();
+
+// Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Identity
 builder.Services.AddSingleton<IdentityNumberProtector>();
 
-var blobConnectionString = builder.Configuration["RaceDayStorage:ConnectionString"];
+// Azure Blob Storage
+var blobConnectionString =
+    builder.Configuration["RaceDayStorage:ConnectionString"];
+
 if (!string.IsNullOrWhiteSpace(blobConnectionString))
 {
-    builder.Services.AddSingleton(new BlobServiceClient(blobConnectionString));
+    builder.Services.AddSingleton(
+        new BlobServiceClient(blobConnectionString));
 }
 
+// Blob service
 builder.Services.AddSingleton<IBlobService, AzureBlobService>();
+
+// Authentication
 builder.Services.AddAuthentication("Session")
-    .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, SessionAuthenticationHandler>(
-        "Session", _ => { });
+    .AddScheme<
+        Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions,
+        SessionAuthenticationHandler>(
+            "Session", _ => { });
+
 builder.Services.AddAuthorization();
 
-// Server-side session: the user's ID and role live on the server (keyed by the session ID).
-// The browser only holds an opaque, HttpOnly session cookie.
+// Server-side sessions
 builder.Services.AddDistributedMemoryCache();
+
 builder.Services.AddSession(options =>
 {
     options.Cookie.Name = ".RaceDay.Session";
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SecurePolicy =
+        CookieSecurePolicy.SameAsRequest;
+
     options.IdleTimeout = TimeSpan.FromMinutes(60);
 });
 
+// Error handling
 builder.Services.AddProblemDetails();
+
+// Rate limiting
 builder.Services.AddRateLimiter(options =>
 {
     options.AddPolicy("auth", context =>
@@ -50,23 +72,31 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 AutoReplenishment = true
             }));
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.RejectionStatusCode =
+        StatusCodes.Status429TooManyRequests;
 });
+
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "RaceDay API",
         Version = "v1",
-        Description = "Call POST /api/auth/login (or register) first. The API starts a server-side " +
-                      "session and the browser sends the session cookie automatically, so Swagger " +
-                      "can then call protected endpoints."
+        Description =
+            "Call POST /api/auth/login (or register) first. " +
+            "The API starts a server-side session and the browser " +
+            "sends the session cookie automatically, so Swagger " +
+            "can then call protected endpoints."
     });
 });
 
 var app = builder.Build();
 
+// Middleware pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -74,13 +104,21 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseExceptionHandler();
+
 app.UseRouting();
+
 app.UseRateLimiter();
+
 app.UseSession();
+
 app.UseAuthentication();
+
 app.UseAuthorization();
+
 app.MapControllers();
+
 app.Run();
 
 public partial class Program
