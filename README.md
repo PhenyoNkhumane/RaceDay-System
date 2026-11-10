@@ -39,10 +39,17 @@ Deliberate differences: the SQL script uses `varchar`, CHECK constraints and see
 ## Run
 
 ```powershell
-dotnet run --project RaceDay.Api
+dotnet run --project RaceDay.Api --launch-profile http
 ```
 
-The API listens at `http://localhost:5155` for the `http` profile. In Development, open `http://localhost:5155/swagger`.
+The `http` profile sets the environment to `Development` and listens at
+`http://localhost:5155`. To use HTTPS, run `dotnet run --project RaceDay.Api
+--launch-profile https`; that profile listens at `https://localhost:7286` and
+`http://localhost:5155`. In Development, open `http://localhost:5155/swagger`.
+
+Do not use the Docker Compose output to verify the local launch profile. Compose
+intentionally sets the services to `Production` and runs the API inside the
+container on port `8080`, published as `http://localhost:5155` on the host.
 
 ### Authentication and sample requests
 
