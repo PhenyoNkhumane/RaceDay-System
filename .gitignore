@@ -5,6 +5,8 @@
 
 # dotenv files
 .env
+.env.*
+!.env.example
 .vs/
 **/.vs/
 .dotnet-cli-home/

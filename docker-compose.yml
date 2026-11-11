@@ -1,28 +1,5 @@
-services:
-  sql:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_PID: Developer
-      MSSQL_SA_PASSWORD: "${SQL_PASSWORD:?Set SQL_PASSWORD in the root .env file}"
-    ports:
-      - "1433:1433"
-    volumes:
-      - sql_data:/var/opt/mssql
-    healthcheck:
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/1433'"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 30s
 
-  azurite:
-    image: mcr.microsoft.com/azure-storage/azurite
-    command: azurite --blobHost 0.0.0.0 --blobPort 10000 --location /data
-    ports:
-      - "10000:10000"
-    volumes:
-      - azurite_data:/data
+services:
   api:
     build:
       context: .
@@ -30,15 +7,11 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "8080"
-      ConnectionStrings__DefaultConnection: "Server=sql,1433;Database=RaceDay;User Id=sa;Password=${SQL_PASSWORD:?Set SQL_PASSWORD in the root .env file};TrustServerCertificate=True;Encrypt=False"
+      ConnectionStrings__DefaultConnection: "${RACEDAY_SQL_CONNECTION_STRING:?Set RACEDAY_SQL_CONNECTION_STRING in the root .env file}"
       Identity__EncryptionKey: "${IDENTITY_ENCRYPTION_KEY:?Set IDENTITY_ENCRYPTION_KEY in the root .env file}"
       Registration__OrganiserCode: "${REGISTRATION_ORGANISER_CODE:?Set REGISTRATION_ORGANISER_CODE in the root .env file}"
-      RaceDayStorage__ConnectionString: "${RACEDAY_STORAGE_CONNECTION_STRING:-}"
-    depends_on:
-      sql:
-        condition: service_healthy
-      azurite:
-        condition: service_started
+      RaceDayStorage__ConnectionString: "${RACEDAY_STORAGE_CONNECTION_STRING:?Set RACEDAY_STORAGE_CONNECTION_STRING in the root .env file}"
+      RaceDayStorage__ContainerName: "${RACEDAY_STORAGE_CONTAINER_NAME:-raceday-images}"
     ports:
       - "5155:8080"
 
@@ -49,12 +22,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "8080"
-      ApiSettings__BaseUrl: http://api:8080/
+      ApiSettings__BaseUrl: "http://api:8080/"
     depends_on:
       - api
     ports:
       - "8080:8080"
-
-volumes:
-  sql_data:
-  azurite_data:

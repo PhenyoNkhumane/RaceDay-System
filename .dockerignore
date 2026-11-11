@@ -9,3 +9,4 @@ TestResults/
 **/*secret*
 **/secrets/
 **/appsettings.Development.json
+.vscode/
