@@ -74,7 +74,7 @@ public class EventsController : ControllerBase
     }
 
     [HttpGet("{eventId:int}/banner")]
-    [Authorize(Roles = Roles.Organiser)]
+    [Authorize(Roles = Roles.Organiser + "," + Roles.Participant)]
     [EndpointSummary("Retrieve an event banner")]
     [EndpointDescription("The owning Organiser may retrieve the stored banner image. Returns 404 if the event or banner is missing.")]
     [Produces("image/jpeg", "image/png", "image/webp")]
