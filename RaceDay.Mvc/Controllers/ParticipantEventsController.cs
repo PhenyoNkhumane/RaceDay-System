@@ -37,6 +37,24 @@ public class ParticipantEventsController(ApiClient api) : Controller
         catch (ApiException ex) { TempData["Error"] = ex.Message; return RedirectToAction(nameof(Index)); }
     }
 
+    [HttpGet("{id:int}/banner")]
+    public async Task<IActionResult> Banner(int id, CancellationToken ct)
+    {
+        try
+        {
+            var image = await api.GetImageAsync($"api/events/{id}/banner", ct);
+
+            if (image is null)
+                return NotFound();
+
+            return File(image.Value.Content, image.Value.ContentType);
+        }
+        catch (ApiException ex)
+        {
+            return StatusCode((int)ex.StatusCode);
+        }
+    }
+
     [HttpPost("{id:int}/enrol"), ValidateAntiForgeryToken]
     public async Task<IActionResult> Enrol(int id, EnrolFormVm model, CancellationToken ct)
     {
