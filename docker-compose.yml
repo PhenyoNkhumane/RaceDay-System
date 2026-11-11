@@ -1,5 +1,15 @@
 
 services:
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    command: azurite --blobHost 0.0.0.0 --blobPort 10000 --location /data
+    environment:
+      AZURITE_ACCOUNTS: "racedaydev:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+    ports:
+      - "10000:10000"
+    volumes:
+      - azurite-data:/data
+
   api:
     build:
       context: .
@@ -10,12 +20,14 @@ services:
       ConnectionStrings__DefaultConnection: "${RACEDAY_SQL_CONNECTION_STRING:?Set RACEDAY_SQL_CONNECTION_STRING in the root .env file}"
       Identity__EncryptionKey: "${IDENTITY_ENCRYPTION_KEY:?Set IDENTITY_ENCRYPTION_KEY in the root .env file}"
       Registration__OrganiserCode: "${REGISTRATION_ORGANISER_CODE:?Set REGISTRATION_ORGANISER_CODE in the root .env file}"
-      RaceDayStorage__ConnectionString: "${RACEDAY_STORAGE_CONNECTION_STRING:?Set RACEDAY_STORAGE_CONNECTION_STRING in the root .env file}"
+      RaceDayStorage__ConnectionString: "${RACEDAY_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=racedaydev;AccountKey=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=;BlobEndpoint=http://azurite:10000/racedaydev;}"
       RaceDayStorage__ContainerName: "${RACEDAY_STORAGE_CONTAINER_NAME:-raceday-images}"
     ports:
       - "5155:8080"
     volumes:
       - dataprotection-keys:/app/DataProtection-Keys
+    depends_on:
+      - azurite
 
   mvc:
     build:
@@ -31,4 +43,5 @@ services:
       - "8080:8080"
 
 volumes:
+  azurite-data:
   dataprotection-keys:

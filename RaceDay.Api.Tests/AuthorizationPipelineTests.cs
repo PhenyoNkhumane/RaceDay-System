@@ -35,7 +35,6 @@ public class AuthorizationPipelineTests : IClassFixture<AuthorizationPipelineTes
         { "PUT", "/api/events/1" },
         { "DELETE", "/api/events/1" },
         { "POST", "/api/events/1/banner" },
-        { "GET", "/api/events/1/banner" },
         { "POST", "/api/events/1/categories" },
         { "PUT", "/api/categories/1" },
         { "DELETE", "/api/categories/1" },
@@ -57,6 +56,7 @@ public class AuthorizationPipelineTests : IClassFixture<AuthorizationPipelineTes
 
     public static TheoryData<string, string> LoginRequiredRoutes => new()
     {
+        { "GET", "/api/events/1/banner" },
         { "GET", "/api/users/me" },
         { "PUT", "/api/users/me" },
         { "PUT", "/api/auth/password" }
@@ -95,6 +95,16 @@ public class AuthorizationPipelineTests : IClassFixture<AuthorizationPipelineTes
         var response = await client.SendAsync(Request(method, url));
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetBanner_AsParticipant_WhenEventDoesNotExist_ReturnsNotFound()
+    {
+        using var client = await SignedInClientAsync(Roles.Participant);
+
+        var response = await client.GetAsync("/api/events/2147483647/banner");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]

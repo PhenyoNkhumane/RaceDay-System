@@ -144,7 +144,7 @@ REGISTRATION_ORGANISER_CODE=choose-a-private-organiser-code
 RACEDAY_STORAGE_CONNECTION_STRING=
 ```
 
-Generate the encryption key with `openssl rand -base64 32`. Keep `.env` private and do not commit real credentials. The Blob connection string is optional; image uploads need a valid Azure Storage connection string.
+Generate the encryption key with `openssl rand -base64 32`. Keep `.env` private and do not commit real credentials. The Blob connection string is optional; Compose uses its local Azurite service by default. Set `RACEDAY_STORAGE_CONNECTION_STRING` to an Azure Storage connection string to use Azure instead.
 
 Start the services:
 
