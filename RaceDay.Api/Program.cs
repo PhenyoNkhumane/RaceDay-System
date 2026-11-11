@@ -47,7 +47,15 @@ builder.Services.AddAuthentication("Session")
 builder.Services.AddAuthorization();
 
 // Server-side sessions
-builder.Services.AddDistributedMemoryCache();
+builder.Services.AddDistributedSqlServerCache(options =>
+{
+    options.ConnectionString =
+        builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException(
+            "ConnectionStrings:DefaultConnection is required for session storage.");
+    options.SchemaName = "dbo";
+    options.TableName = "SessionCache";
+});
 
 builder.Services.AddSession(options =>
 {
