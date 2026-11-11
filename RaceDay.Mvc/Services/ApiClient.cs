@@ -36,6 +36,25 @@ public sealed class ApiClient
     public Task<T?> PostAsync<T>(string path, object body, CancellationToken ct = default) => SendAsync<T>(HttpMethod.Post, path, body, ct);
     public Task<T?> PutAsync<T>(string path, object body, CancellationToken ct = default) => SendAsync<T>(HttpMethod.Put, path, body, ct);
 
+    public async Task<(byte[] Content, string ContentType)?> GetImageAsync(
+        string path,
+        CancellationToken ct = default)
+    {
+        using var response = await SendRequest(HttpMethod.Get, path, null, ct);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return null;
+
+        await EnsureSuccess(response, ct);
+
+        var content = await response.Content.ReadAsByteArrayAsync(ct);
+
+        var contentType = response.Content.Headers.ContentType?.MediaType
+            ?? "application/octet-stream";
+
+        return (content, contentType);
+    }
+
     public async Task DeleteAsync(string path, CancellationToken ct = default)
     {
         using var response = await SendRequest(HttpMethod.Delete, path, null, ct);
