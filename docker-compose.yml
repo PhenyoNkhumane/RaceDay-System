@@ -14,8 +14,8 @@ services:
       RaceDayStorage__ContainerName: "${RACEDAY_STORAGE_CONTAINER_NAME:-raceday-images}"
     ports:
       - "5155:8080"
-        volumes:
-      - dataprotection-keys:/root/.aspnet/DataProtection-Keys
+    volumes:
+      - dataprotection-keys:/app/DataProtection-Keys
 
   mvc:
     build:
@@ -29,5 +29,6 @@ services:
       - api
     ports:
       - "8080:8080"
+
 volumes:
   dataprotection-keys:

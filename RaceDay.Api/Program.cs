@@ -1,4 +1,5 @@
 
+using Microsoft.AspNetCore.DataProtection;
 using System.Threading.RateLimiting;
 using Azure.Storage.Blobs;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(
-        new DirectoryInfo("/root/.aspnet/DataProtection-Keys"));
+        new DirectoryInfo("/app/DataProtection-Keys"));
 
 // Controllers
 builder.Services.AddControllers();
