@@ -109,6 +109,16 @@ public class AuthorizationPipelineTests : IClassFixture<AuthorizationPipelineTes
     }
 
     [Fact]
+    public async Task GetProfilePicture_WithoutSession_ReturnsUnauthorized()
+    {
+        using var client = _factory.CreateClient();
+
+        var response = await client.GetAsync("/api/users/me/profile-picture");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Register_StartsSession_SoProfileIsReadable()
     {
         using var client = await SignedInClientAsync(Roles.Participant);

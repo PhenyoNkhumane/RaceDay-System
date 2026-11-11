@@ -15,7 +15,7 @@ builder.Services.AddSession(options =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient("Api", client =>
 {
-    var apiUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5155/";
+    var apiUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5156/";
     client.BaseAddress = new Uri(apiUrl.EndsWith('/') ? apiUrl : apiUrl + "/");
     client.Timeout = TimeSpan.FromSeconds(30);
 });

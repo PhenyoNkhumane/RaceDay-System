@@ -51,9 +51,9 @@ dotnet run --project RaceDay.Api --launch-profile http
 ```
 
 The `http` profile sets the environment to `Development` and listens at
-`http://localhost:5155`. To use HTTPS, run `dotnet run --project RaceDay.Api
+`http://localhost:5156`. To use HTTPS, run `dotnet run --project RaceDay.Api
 --launch-profile https`; that profile listens at `https://localhost:7286` and
-`http://localhost:5155`. In Development, open `http://localhost:5155/swagger`.
+`http://localhost:5156`. In Development, open `http://localhost:5156/swagger`.
 
 Do not use the Docker Compose output to verify the local launch profile. Compose
 intentionally sets the services to `Production` and runs the API inside the
@@ -137,13 +137,13 @@ The Participant area includes upcoming event filters, event details and category
 1. Set up SQL Server and apply the API migrations as described above.
 2. Configure the API database connection and organiser invite code. Local Development uses Azurite; for real Azure uploads, provide `RaceDayStorage:ConnectionString` through user-secrets or the `RaceDayStorage__ConnectionString` environment variable. The API creates the `raceday-images` container for images.
 3. Start Azurite for local blob-storage practice. Development uses `UseDevelopmentStorage=true`; the API creates the `raceday-images` container when an image is uploaded. Azurite evidence is not proof of an Azure Storage Account. Before submission, create a real Azure Storage Account and replace only `RaceDayStorage:ConnectionString` (or `RaceDayStorage__ConnectionString`) with its connection string. Verify the uploaded blob in the Azure portal and its URL in the database.
-4. Run the API at `http://localhost:5155`.
+4. Run the API at `http://localhost:5156`.
 5. In another terminal, run `dotnet run --project RaceDay.Mvc`. The MVC app opens at `http://localhost:5186`. Override `ApiSettings:BaseUrl` with `ApiSettings__BaseUrl` when the API uses another address.
 6. To start both apps from Visual Studio, open the solution's startup-project settings, select **Multiple startup projects**, and set both `RaceDay.Api` and `RaceDay.Mvc` to **Start**.
 
 ### Docker Compose
 
-Docker Compose starts SQL Server, the API, and the MVC app. Before starting, create a root `.env` file with a SQL Server password, a base64-encoded 32-byte encryption key, and an organiser invite code:
+Docker Compose starts SQL Server, Azurite, the API, and the MVC app. Before starting, create a root `.env` file with a SQL Server password, a base64-encoded 32-byte encryption key, and an organiser invite code:
 
 ```dotenv
 SQL_PASSWORD=replace-with-a-strong-sql-server-password
@@ -152,7 +152,7 @@ REGISTRATION_ORGANISER_CODE=choose-a-private-organiser-code
 RACEDAY_STORAGE_CONNECTION_STRING=
 ```
 
-Generate the encryption key with `openssl rand -base64 32`. Keep `.env` private and do not commit real credentials. The Blob connection string is optional; Compose uses its local Azurite service by default. Set `RACEDAY_STORAGE_CONNECTION_STRING` to an Azure Storage connection string to use Azure instead.
+Generate the encryption key with `openssl rand -base64 32`. Keep `.env` private and do not commit real credentials. `SQL_PASSWORD` is used both by the SQL Server container and the API connection string. The Blob connection string is optional; Compose uses its local Azurite service by default. Set `RACEDAY_STORAGE_CONNECTION_STRING` to an Azure Storage connection string to use Azure instead. Compose runs both applications in `Production`.
 
 Start the services:
 
@@ -169,9 +169,22 @@ dotnet ef database update --project RaceDay.Api
 
 Open the MVC app at `http://localhost:8080` or access the API at `http://localhost:5155`. SQL Server data persists in the `sql_data` volume; stop the services with `docker compose down`.
 
+### Run only the MVC container
+
+If the API is already running on the host at `http://localhost:5156`, build and run the MVC image without Compose:
+
+```powershell
+docker build -t raceday-mvc RaceDay.Mvc
+docker run --rm -p 8080:8080 -e ApiSettings__BaseUrl=http://host.docker.internal:5156/ raceday-mvc
+```
+
 ### Part 3 submission items
 
-The Part 3 CI job builds the solution, runs the existing API test suite, and builds the MVC Docker image. Add the Part 3 green workflow screenshot and your unlisted Part 3 video link here before submission. The video must use your own voice and explain the MVC structure, API-backed features, Blob Storage flow, and Docker run.
+The Part 3 CI job builds the solution, runs the API test suite, and builds the MVC Docker image. Replace the image placeholder with the green Part 3 workflow screenshot at `docs/part3-ci-screenshot.png` before submission:
+
+![Part 3 CI workflow passing](docs/part3-ci-screenshot.png)
+
+Add the unlisted Part 3 video URL before submission: `TODO: add the Part 3 YouTube link`. The video must use your own voice and explain the MVC structure, API-backed features, Blob Storage flow, and Docker run.
 
 Part 3 adds nullable `Event.banner_url` and `User.profile_picture_url` columns through the `Part3ImageUploads` migration. This is a documented extension to the Part 1 ERD and SQL script. Apply it with `dotnet ef database update --project RaceDay.Api` before running the updated API.
 

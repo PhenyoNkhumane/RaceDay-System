@@ -9,6 +9,17 @@ namespace RaceDay.Mvc.Controllers;
 public class ProfileController(ApiClient api) : Controller
 {
     [HttpGet]
+    public async Task<IActionResult> Picture(CancellationToken ct)
+    {
+        try
+        {
+            var image = await api.GetImageAsync("api/users/me/profile-picture", ct);
+            return image is null ? NotFound() : File(image.Value.Content, image.Value.ContentType);
+        }
+        catch (ApiException ex) { return StatusCode((int)ex.StatusCode); }
+    }
+
+    [HttpGet]
     public async Task<IActionResult> Index(CancellationToken ct)
     {
         try

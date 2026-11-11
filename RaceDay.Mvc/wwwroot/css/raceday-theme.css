@@ -75,6 +75,7 @@ body {
 .status-neutral { background: #27334e; color: #d1d9ee; }
 .status-confirmed { background: #123b35; color: #85e7bd; }
 .status-pending { background: #493719; color: #ffd273; }
+.status-paid { background: #123b35; color: #85e7bd; }
 .status-cancelled { background: #482632; color: #ff9aaf; }
 .event-date-tile, .result-date { background: #18264a; color: #8fcaff; }
 .dashboard-count b, .result-stat b { color: #f4f6ff; }

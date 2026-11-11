@@ -44,6 +44,28 @@ public class AdminAndUsersControllerTests
     }
 
     [Fact]
+    public async Task GetProfilePicture_WithSession_ReturnsPrivateBlobContent()
+    {
+        using var db = TestDbFactory.Create();
+        var user = ControllerTestHelper.AddParticipant(db, "runner@raceday.co.za", "Secret123!");
+        user.ProfilePictureUrl = "https://storage.example.test/raceday-images/profile.png";
+        db.SaveChanges();
+
+        var blobService = new FakeBlobService([1, 2, 3]);
+        var controller = new UsersController(db, blobService);
+        ControllerTestHelper.AttachUser(controller, user.Id, Roles.Participant);
+
+        var result = await controller.GetProfilePicture(CancellationToken.None);
+
+        var file = Assert.IsType<FileStreamResult>(result);
+        Assert.Equal("image/png", file.ContentType);
+        Assert.Equal(user.ProfilePictureUrl, blobService.RequestedImageUrl);
+        using var content = new MemoryStream();
+        await file.FileStream.CopyToAsync(content);
+        Assert.Equal(new byte[] { 1, 2, 3 }, content.ToArray());
+    }
+
+    [Fact]
     public void CreateDiscipline_AsOrganiser_SavesDiscipline()
     {
         // Arrange
@@ -79,4 +101,19 @@ public class AdminAndUsersControllerTests
         Assert.Single(db.Disciplines);
     }
 
+}
+
+file sealed class FakeBlobService(byte[] imageContent) : IBlobService
+{
+    public bool IsConfigured => true;
+    public string? RequestedImageUrl { get; private set; }
+
+    public Task<string> UploadImageAsync(Stream content, string contentType, string fileName, CancellationToken cancellationToken = default) =>
+        Task.FromResult("https://storage.example.test/raceday-images/uploaded.png");
+
+    public Task<BlobImage?> DownloadImageAsync(string imageUrl, CancellationToken cancellationToken = default)
+    {
+        RequestedImageUrl = imageUrl;
+        return Task.FromResult<BlobImage?>(new BlobImage(new MemoryStream(imageContent), "image/png"));
+    }
 }

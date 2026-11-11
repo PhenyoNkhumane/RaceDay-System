@@ -41,6 +41,28 @@ public class UsersController : ControllerBase
         return Ok(UserMapper.ToResponse(user));
     }
 
+    [HttpGet("me/profile-picture")]
+    [RequireLogin]
+    [EndpointSummary("Retrieve the signed-in user's profile picture")]
+    [EndpointDescription("Streams the signed-in user's private profile picture from Blob Storage. Returns 404 if no picture exists and requires an authenticated session.")]
+    [Produces("image/jpeg", "image/png", "image/webp")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<IActionResult> GetProfilePicture(CancellationToken cancellationToken)
+    {
+        var userId = CurrentUser.GetUserId(HttpContext);
+        var user = userId is null ? null : await _db.Users.FindAsync([userId.Value], cancellationToken);
+        if (user is null) return Unauthorized();
+        if (string.IsNullOrWhiteSpace(user.ProfilePictureUrl)) return NotFound();
+        if (_blobService is null || !_blobService.IsConfigured)
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, "Image storage is not configured.");
+
+        var image = await _blobService.DownloadImageAsync(user.ProfilePictureUrl, cancellationToken);
+        return image is null ? NotFound() : File(image.Content, image.ContentType);
+    }
+
     [HttpGet("me")]
     [RequireLogin]
     [EndpointSummary("Get the signed-in user's profile")]
