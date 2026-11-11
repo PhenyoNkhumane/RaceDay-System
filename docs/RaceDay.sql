@@ -11,6 +11,17 @@ GO
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
+CREATE TABLE dbo.SessionCache (
+    Id NVARCHAR(449) NOT NULL,
+    Value VARBINARY(MAX) NOT NULL,
+    ExpiresAtTime DATETIMEOFFSET NOT NULL,
+    SlidingExpirationInSeconds BIGINT NULL,
+    AbsoluteExpiration DATETIMEOFFSET NULL,
+    CONSTRAINT PK_SessionCache PRIMARY KEY CLUSTERED (Id ASC)
+);
+CREATE NONCLUSTERED INDEX IX_SessionCache_ExpiresAtTime
+    ON dbo.SessionCache (ExpiresAtTime ASC);
+GO
 -- =============================================
 -- TABLE: Discipline
 -- =============================================
