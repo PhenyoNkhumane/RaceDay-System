@@ -18,6 +18,24 @@ public class OrganiserDashboardController(ApiClient api) : Controller
 [SessionAuthorize("Organiser")]
 public class OrganiserEventsController(ApiClient api) : Controller
 {
+    [HttpGet]
+    public async Task<IActionResult> Banner(int id, CancellationToken ct)
+    {
+        try
+        {
+            var image = await api.GetImageAsync($"api/events/{id}/banner", ct);
+
+            if (image is null)
+                return NotFound();
+
+            return File(image.Value.Content, image.Value.ContentType);
+        }
+        catch (ApiException ex)
+        {
+            return StatusCode((int)ex.StatusCode);
+        }
+    }
+
     public async Task<IActionResult> Index(CancellationToken ct)
     {
         try { return View(await api.GetAsync<List<EventVm>>("api/events/mine", ct) ?? []); }
