@@ -8,6 +8,10 @@ using RaceDay.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(
+        new DirectoryInfo("/root/.aspnet/DataProtection-Keys"));
+
 // Controllers
 builder.Services.AddControllers();
 

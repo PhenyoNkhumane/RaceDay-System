@@ -91,7 +91,8 @@ public class EventsController : ControllerBase
             return NotFound();
         }
 
-        if (ev.OrganiserId != CurrentUser.GetUserId(HttpContext))
+        if (User.IsInRole(Roles.Organiser) &&
+            ev.OrganiserId != CurrentUser.GetUserId(HttpContext))
         {
             return Forbid();
         }
