@@ -7,6 +7,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using RaceDay.Api.Data;
@@ -349,6 +350,8 @@ public class AuthorizationPipelineTests : IClassFixture<AuthorizationPipelineTes
                 }));
             builder.ConfigureServices(services =>
             {
+                services.RemoveAll<IDistributedCache>();
+                services.AddDistributedMemoryCache();
                 services.RemoveAll<IDbContextOptionsConfiguration<ApplicationDbContext>>();
                 services.RemoveAll<ApplicationDbContext>();
                 services.RemoveAll<DbContextOptions<ApplicationDbContext>>();

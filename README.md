@@ -34,6 +34,14 @@ Use either approach:
 dotnet ef database update --project RaceDay.Api
 ```
 
+API sessions are stored in SQL Server (`dbo.SessionCache`) so they remain
+available after an API restart and are shared by API instances using the same
+database. The EF migration and full SQL setup script create this cache table.
+For an existing code-first database, run `dotnet ef database update --project
+RaceDay.Api`. For a database initialized with the demo SQL script, run the
+additive [`docs/SessionCache.sql`](docs/SessionCache.sql) script once; do not
+rerun `RaceDay.sql` against an existing database because it recreates it.
+
 Deliberate differences: the SQL script uses `varchar`, CHECK constraints and seed data; the migration uses `nvarchar`, omits CHECKs and seed data, and adds the same subtype triggers plus the filtered unique index on active registrations via the model. Prefer the script for Part 1 demos and the migration for the API.
 
 ## Run
