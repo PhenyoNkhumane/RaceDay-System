@@ -1,55 +1,21 @@
 
 services:
-  sql:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "${SQL_PASSWORD:?Set SQL_PASSWORD in the root .env file}"
-    ports:
-      - "1433:1433"
-    volumes:
-      - sql_data:/var/opt/mssql
-    healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q \"SELECT 1\" || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
-
-  azurite:
-    image: mcr.microsoft.com/azure-storage/azurite
-    command: azurite --blobHost 0.0.0.0 --blobPort 10000 --location /data
-    environment:
-      AZURITE_ACCOUNTS: "racedaydev:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
-    ports:
-      - "10000:10000"
-    volumes:
-      - azurite-data:/data
-
   api:
     build:
       context: .
       dockerfile: RaceDay.Api/Dockerfile
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
-      Database__ApplyMigrationsOnStartup: "true"
-      Swagger__Enabled: "true"
-      DataProtection__KeysPath: /app/DataProtection-Keys
-      ConnectionStrings__DefaultConnection: "Server=sql,1433;Database=RaceDay;User Id=sa;Password=${SQL_PASSWORD:?Set SQL_PASSWORD in the root .env file};TrustServerCertificate=True;Encrypt=False"
+      RaceDaySql__ConnectionString: "${RACEDAY_SQL_CONNECTION_STRING:?Set RACEDAY_SQL_CONNECTION_STRING in the root .env file}"
       Identity__EncryptionKey: "${IDENTITY_ENCRYPTION_KEY:?Set IDENTITY_ENCRYPTION_KEY in the root .env file}"
       Registration__OrganiserCode: "${REGISTRATION_ORGANISER_CODE:?Set REGISTRATION_ORGANISER_CODE in the root .env file}"
-      RaceDayStorage__ConnectionString: "${RACEDAY_STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=racedaydev;AccountKey=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=;BlobEndpoint=http://azurite:10000/racedaydev;}"
+      RaceDayStorage__ConnectionString: "${RACEDAY_STORAGE_CONNECTION_STRING:?Set RACEDAY_STORAGE_CONNECTION_STRING in the root .env file}"
       RaceDayStorage__ContainerName: "${RACEDAY_STORAGE_CONTAINER_NAME:-raceday-images}"
-    ports:
-      - "5155:8080"
     volumes:
       - dataprotection-keys:/app/DataProtection-Keys
-    depends_on:
-      sql:
-        condition: service_healthy
-      azurite:
-        condition: service_started
+    ports:
+      - "5155:8080"
 
   mvc:
     build:
@@ -65,6 +31,4 @@ services:
       - "8080:8080"
 
 volumes:
-  azurite-data:
   dataprotection-keys:
-  sql_data:

@@ -4,6 +4,10 @@
 
 RaceDay is an ASP.NET Core API for managing sporting events, categories, participant registrations, clubs, and results. Organisers create and administer events; Participants enrol and view their own records. Authentication uses a server-side session with an HttpOnly `.RaceDay.Session` cookie.
 
+## CI/CD build
+
+![Successful CI/CD workflow runs](docs/part3-ci-screenshot.png)
+
 ## User roles
 
 ### Organiser
