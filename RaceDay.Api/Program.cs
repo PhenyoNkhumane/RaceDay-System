@@ -9,9 +9,14 @@ using RaceDay.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(
-        new DirectoryInfo("/app/DataProtection-Keys"));
+// Persist data-protection keys only when a path is configured (set in Docker),
+// so local runs on Windows/macOS do not try to write to a root-level /app folder.
+var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
+if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+{
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
+}
 
 // Controllers
 builder.Services.AddControllers();
@@ -109,8 +114,18 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+// Apply EF migrations on startup when enabled (Docker Compose turns this on)
+if (app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
+{
+    using var migrationScope = app.Services.CreateScope();
+    migrationScope.ServiceProvider
+        .GetRequiredService<ApplicationDbContext>()
+        .Database.Migrate();
+}
+
 // Middleware pipeline
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment()
+    || app.Configuration.GetValue<bool>("Swagger:Enabled"))
 {
     app.UseSwagger();
     app.UseSwaggerUI();
