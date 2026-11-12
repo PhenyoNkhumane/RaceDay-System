@@ -127,9 +127,13 @@ public sealed class ApiClient
         if (!string.IsNullOrWhiteSpace(cookie)) request.Headers.TryAddWithoutValidation("Cookie", cookie);
     }
 
-    private static async Task EnsureSuccess(HttpResponseMessage response, CancellationToken ct)
+    private async Task EnsureSuccess(HttpResponseMessage response, CancellationToken ct)
     {
         if (response.IsSuccessStatusCode) return;
+        // The API session has expired: clear the MVC session too so the next
+        // request is redirected to the login page instead of staying "signed in".
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+            _context.HttpContext?.Session.Clear();
         var friendly = response.StatusCode switch
         {
             HttpStatusCode.Unauthorized => "Your session has expired. Please sign in again.",
