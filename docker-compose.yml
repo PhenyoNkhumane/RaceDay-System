@@ -33,6 +33,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "8080"
+      Database__ApplyMigrationsOnStartup: "true"
+      Swagger__Enabled: "true"
+      DataProtection__KeysPath: /app/DataProtection-Keys
       ConnectionStrings__DefaultConnection: "Server=sql,1433;Database=RaceDay;User Id=sa;Password=${SQL_PASSWORD:?Set SQL_PASSWORD in the root .env file};TrustServerCertificate=True;Encrypt=False"
       Identity__EncryptionKey: "${IDENTITY_ENCRYPTION_KEY:?Set IDENTITY_ENCRYPTION_KEY in the root .env file}"
       Registration__OrganiserCode: "${REGISTRATION_ORGANISER_CODE:?Set REGISTRATION_ORGANISER_CODE in the root .env file}"
