@@ -9,6 +9,11 @@ using RaceDay.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var defaultConnectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? builder.Configuration["RaceDaySql:ConnectionString"]
+    ?? throw new InvalidOperationException(
+        "ConnectionStrings:DefaultConnection or RaceDaySql:ConnectionString is required.");
+
 // Persist data-protection keys only when a path is configured (set in Docker),
 // so local runs on Windows/macOS do not try to write to a root-level /app folder.
 var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
@@ -23,8 +28,7 @@ builder.Services.AddControllers();
 
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(defaultConnectionString));
 
 // Identity
 builder.Services.AddSingleton<IdentityNumberProtector>();
@@ -54,10 +58,7 @@ builder.Services.AddAuthorization();
 // Server-side sessions
 builder.Services.AddDistributedSqlServerCache(options =>
 {
-    options.ConnectionString =
-        builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? throw new InvalidOperationException(
-            "ConnectionStrings:DefaultConnection is required for session storage.");
+    options.ConnectionString = defaultConnectionString;
     options.SchemaName = "dbo";
     options.TableName = "SessionCache";
 });
