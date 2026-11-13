@@ -48,6 +48,27 @@ rerun `RaceDay.sql` against an existing database because it recreates it.
 
 Deliberate differences: the SQL script uses `varchar`, CHECK constraints and seed data; the migration uses `nvarchar`, omits CHECKs and seed data, and adds the same subtype triggers plus the filtered unique index on active registrations via the model. Prefer the script for Part 1 demos and the migration for the API.
 
+### Safe Discipline Seeding (Existing Database)
+
+For an existing RaceDay database, use `docs/SeedDisciplines.sql` to add any missing disciplines without dropping or recreating the database.
+
+**Instructions:**
+
+1. Open SQL Server Management Studio (SSMS).
+2. Connect to your SQL Server instance.
+3. Open `docs/SeedDisciplines.sql`.
+4. Execute the script against the RaceDay database.
+5. Verify the discipline records returned by the final SELECT statement.
+
+The script:
+
+- Inserts only disciplines that do not already exist.
+- Preserves existing discipline records and IDs.
+- Does not drop, delete, or recreate the database.
+- Can be executed repeatedly without creating duplicate discipline names.
+
+**Important:** Use `docs/RaceDay.sql` for a fresh database setup only. It drops and recreates the database if it already exists. Use `docs/SeedDisciplines.sql` when updating an existing database.
+
 ## Run
 
 ```powershell
