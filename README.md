@@ -185,12 +185,26 @@ Start the services:
 docker compose up --build -d
 ```
 
-Apply the API migrations to the Compose database once it is healthy. Set the password to the same value as `SQL_PASSWORD` in `.env`:
+### Database Migrations
 
-```powershell
-$env:ConnectionStrings__DefaultConnection = "Server=localhost,1433;Database=RaceDay;User Id=sa;Password=<SQL_PASSWORD>;TrustServerCertificate=True;Encrypt=False"
-dotnet ef database update --project RaceDay.Api
-```
+The Docker Compose configuration enables automatic database migrations
+through the API service:
+
+`Database__ApplyMigrationsOnStartup: "true"`
+
+When the API starts, it attempts to apply pending EF Core migrations
+automatically.
+
+**Important Docker considerations:**
+- The SQL Server service does not currently have a health check.
+- `depends_on` controls service startup order but does not guarantee
+  that SQL Server is ready to accept connections.
+- The API does not currently implement an explicit startup retry loop
+  for database migrations.
+- Consequently, API startup may fail if SQL Server is not ready.
+
+The Docker Compose configuration has been reviewed, but the complete
+four-service setup has not yet been runtime-tested.
 
 Open the MVC app at `http://localhost:8080` or access the API at `http://localhost:5155`. SQL Server data persists in the `sql_data` volume; stop the services with `docker compose down`.
 
