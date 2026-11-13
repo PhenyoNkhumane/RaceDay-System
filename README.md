@@ -217,13 +217,15 @@ docker build -t raceday-mvc RaceDay.Mvc
 docker run --rm -p 8080:8080 -e ApiSettings__BaseUrl=http://host.docker.internal:5156/ raceday-mvc
 ```
 
-### Part 3 submission items
+## Part 3 – MVC Application Demonstration
 
-The Part 3 CI job builds the solution, runs the API test suite, and builds the MVC Docker image. Replace the image placeholder with the green Part 3 workflow screenshot at `docs/part3-ci-screenshot.png` before submission:
+The Part 3 demonstration showcases the RaceDay MVC application and its integration with the ASP.NET Core Web API.
 
-![Part 3 CI workflow passing](docs/part3-ci-screenshot.png)
+**Watch the Part 3 Demonstration:**
 
-Add the unlisted Part 3 video URL before submission: `TODO: add the Part 3 YouTube link`. The video must use your own voice and explain the MVC structure, API-backed features, Blob Storage flow, and Docker run.
+[RaceDay Presentation – Part 3](https://youtu.be/lhUv7-u5zF8?si=LmLYxJlWvFWonvR_)
+
+The demonstration covers the MVC application structure, API integration, authentication and session handling, participant and organiser functionality, Azure Blob Storage integration, and Docker configuration.
 
 Part 3 adds nullable `Event.banner_url` and `User.profile_picture_url` columns through the `Part3ImageUploads` migration. This is a documented extension to the Part 1 ERD and SQL script. Apply it with `dotnet ef database update --project RaceDay.Api` before running the updated API.
 
