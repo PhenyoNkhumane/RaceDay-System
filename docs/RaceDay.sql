@@ -247,11 +247,18 @@ GO
 -- =============================================
 
 -- DISCIPLINES
-INSERT INTO Discipline (name, description)
+INSERT INTO dbo.Discipline (name, description)
 VALUES
-('Running', 'Road running and marathon events'),
-('Walking', 'Competitive and recreational walking events'),
-('Cycling', 'Road cycling events');
+(N'Running', N'Running events, including road races, fun runs and competitive running events.'),
+(N'Track & Field', N'Track races, relays, jumps, and throwing events.'),
+(N'Trail Running', N'Off-road running events on natural terrain.'),
+(N'Road Cycling', N'Road-based cycling races and time trials.'),
+(N'Mountain Biking', N'Off-road cycling events on mountain-bike trails.'),
+(N'Swimming', N'Pool and open-water swimming events.'),
+(N'Triathlon', N'Multisport events combining swimming, cycling, and running.'),
+(N'Duathlon', N'Multisport events combining running and cycling.'),
+(N'Obstacle Course Racing', N'Running events with physical obstacles.'),
+(N'Power Walking', N'Competitive race-walking and power-walking events.');
 GO
 
 -- USERS
