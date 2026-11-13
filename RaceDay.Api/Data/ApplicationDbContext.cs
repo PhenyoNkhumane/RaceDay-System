@@ -30,7 +30,8 @@ public class ApplicationDbContext : DbContext
     {
         modelBuilder.Entity<User>(entity =>
         {
-            entity.ToTable("User");
+            entity.ToTable("User", table =>
+                table.UseSqlOutputClause(false));
             entity.HasIndex(e => e.Email).IsUnique();
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Email).HasColumnName("email").HasMaxLength(255);
